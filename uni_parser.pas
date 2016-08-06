@@ -143,12 +143,58 @@ begin {getsym}
     if not(end_of_file) then getch;
   end;
   getsym:=id;
-  writeln('symbol: ',id.s_name);
+//  writeln('symbol: ',id.s_name);
 end {getsym};
 //==================================================================
 
+const max_sym_table_size=100;
+
+type
+t_sym_node=record
+    sym:t_sym;
+    kind: (terminal,non_terminal,meta);
+    suc,alt:integer; {номера символов в таблице символов для перехода далее}
+end;
+
+var sym_table:array[1..max_sym_table_size] of t_sym_node;
+    symbols_num:integer;
+    cur_sym_address:integer;
+    sym:t_sym;
+
+function find_symbol_by_name(sym:t_sym):integer;
+var i,res:integer;
+begin
+    res:=0;
+    for i:=1 to symbols_num do
+        if sym_table[i].sym.s_name=sym.s_name then res:=i;
+    find_symbol_by_name:=res;
+end; {find_symbol_by_name}
+
+procedure add_symbol_to_table(sym:t_sym);
+begin
+    if symbols_num<max_sym_table_size then
+    begin
+        symbols_num:=symbols_num+1;
+        sym_table[symbols_num].sym:=sym;
+        sym_table[symbols_num].kind:=terminal;
+        sym_table[symbols_num].suc:=0;
+        sym_table[symbols_num].alt:=0;
+    end;
+end; {add_symbol_to_table}
+
+function getsym_table:t_sym;
 var sym:t_sym;
-procedure term; forward;
+begin
+    sym.s_name:='';
+    sym.kind:=nul;
+    if cur_sym_address<symbols_num then
+    begin
+        cur_sym_address:=cur_sym_address+1;
+        sym:=sym_table[cur_sym_address].sym;
+    end else cur_sym_address:=symbols_num+1;
+    getsym_table:=sym;
+//    writeln('symbol: ',sym.s_name);    
+end; {getsym_table}
 
 procedure error;
 begin
@@ -157,15 +203,21 @@ begin
    halt(-1);
 end; {error}
 
+procedure term; forward;
 // factor ::= <symbol> | [<term>]
 procedure factor;
 begin
   if sym.s_name='[' then
   begin
-    sym:=getsym;
+    sym_table[cur_sym_address].kind:=meta;
+    sym:=getsym_table;
     if sym.s_name<>']' then term;
-    if sym.s_name=']' then sym:=getsym else error;
-  end else sym:=getsym;
+    if sym.s_name=']' then
+    begin
+      sym_table[cur_sym_address].kind:=meta;
+      sym:=getsym_table
+    end else error;
+  end else sym:=getsym_table;
 end {factor};
 
 // term ::= <factor> {<factor>}
@@ -182,21 +234,73 @@ begin
    term;
    while sym.s_name=',' do
    begin
-      sym:=getsym;
+      sym_table[cur_sym_address].kind:=meta;
+      sym:=getsym_table;
       term;
    end;
 end {expression};
 
-begin {main}
-  start_of_file:=true; end_of_file:=false;
-  getch; sym:=getsym;
 
-  while(sym.s_name<>'end_of_file') do
+var i:integer;
+begin {main}
+  //инициализация
+  start_of_file:=true; end_of_file:=false; symbols_num:=0; cur_sym_address:=0;
+  getch; sym:=getsym;
+  
+  //проход 1
+  //читаем все символы из файла в таблицу символов
+  while(sym.s_name<>'$') do
+  begin
+    add_symbol_to_table(sym);
+    sym:=getsym;
+  end;
+
+for i:=1 to symbols_num do
+    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].sym.s_name);
+writeln('1-st OK');
+writeln('==============');
+
+  //проход 2
+  //просмотр с целью нахождения всех нетерминальных символов
+  cur_sym_address:=0;
+  sym:=getsym_table;
+  while cur_sym_address<=symbols_num do  
   begin 
-      if sym.kind=ident then sym:=getsym else error;
-      if sym.s_name='=' then sym:=getsym else error;
+      if sym.kind=ident then
+      begin
+        sym_table[cur_sym_address].kind:=non_terminal;
+        sym:=getsym_table;
+      end else error;
+      if sym.s_name='=' then
+      begin
+        sym_table[cur_sym_address].kind:=meta;
+        sym:=getsym_table
+      end else error;
       expression;
       if sym.s_name<>'.' then error;
-     sym:=getsym;
+      sym_table[cur_sym_address].kind:=meta;
+     sym:=getsym_table;
   end;
+
+for i:=1 to symbols_num do
+    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].sym.s_name);
+writeln('2-nd OK');
+writeln('==============');
+
+  //проход 3
+  //Построение структуры языка на основе форм Бэкуса-Наура
+  cur_sym_address:=0;
+  sym:=getsym_table;
+  while cur_sym_address<=symbols_num do  
+  begin 
+      if sym.kind=ident then
+      begin
+        sym_table[cur_sym_address].kind:=non_terminal;
+        sym:=getsym_table
+      end else error;
+      if sym.s_name='=' then sym:=getsym_table else error;
+      expression;
+      if sym.s_name<>'.' then error;
+     sym:=getsym_table;
+  end;  
 end.
