@@ -1,5 +1,5 @@
 A=PB,[P].
-BBB=KZ,N+A.
+B=KZ,N+A.
 AC=ZZ[R]YYM,U[B]UMA.
 $C
 UUM.

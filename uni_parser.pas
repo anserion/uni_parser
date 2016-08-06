@@ -170,6 +170,24 @@ begin
     find_symbol_by_name:=res;
 end; {find_symbol_by_name}
 
+function find_non_terminal_symbol_by_name(sym:t_sym):integer;
+var i,res:integer;
+begin
+    res:=0;
+    for i:=1 to symbols_num do
+        if (sym_table[i].sym.s_name=sym.s_name) and
+           (sym_table[i].kind=non_terminal) then res:=i;
+    find_non_terminal_symbol_by_name:=res;
+end; {find_non_terminal_symbol_by_name}
+
+function find_next_non_meta_symbol:integer;
+var i:integer;
+begin
+    i:=cur_sym_address+1;
+    while sym_table[i].kind=meta do i:=i+1;
+    find_next_non_meta_symbol:=i;
+end;
+
 procedure add_symbol_to_table(sym:t_sym);
 begin
     if symbols_num<max_sym_table_size then
@@ -185,7 +203,7 @@ end; {add_symbol_to_table}
 function getsym_table:t_sym;
 var sym:t_sym;
 begin
-    sym.s_name:='';
+    sym.s_name:='OUT';
     sym.kind:=nul;
     if cur_sym_address<symbols_num then
     begin
@@ -239,9 +257,57 @@ begin
       term;
    end;
 end {expression};
+(*
+procedure term_gen; forward;
+// factor ::= <symbol> | [<term>]
+procedure factor_gen;
+var sym_addr:integer;
+begin
+  if sym.s_name='[' then
+  begin
+    sym_table[cur_sym_address].kind:=meta;
+    sym:=getsym_table;
+    if sym.s_name<>']' then term_gen;
+    if sym.s_name=']' then
+    begin
+      sym_table[cur_sym_address].kind:=meta;
+      sym:=getsym_table
+    end else error;
+  end else sym:=getsym_table;
+  sym_addr:=find_non_terminal_symbol_by_name(sym);
+  if sym_addr<>0 then
+  if sym_table[sym_addr].kind=non_terminal then
+  begin
+  end;
+end {factor};
 
+// term ::= <factor> {<factor>}
+procedure term_gen;
+begin
+   repeat
+     factor_gen;
+   until (sym.s_name='.')or(sym.s_name=',')or(sym.s_name=']');
+end {term_gen};
 
-var i:integer;
+// expression ::= <term> {,<term>} 
+procedure expression_gen(var expr_in_addr,expr_out_addr:integer);
+var term_in_addr, term_alt_addr, term_out_addr:integer;
+begin
+   term_gen(expr_in_addr,term_alt_addr,term_out_addr);
+   sym_table[term_out_addr].suc:=0;
+   while sym.s_name=',' do
+   begin
+      sym_table[cur_sym_address].kind:=meta;
+      sym:=getsym_table;
+      term_gen(sym_table[term_alt_addr].alt,term_suc_addr,term_out_addr);
+      sym_table[term_out_addr].suc:=0;
+      term_alt_addr:=term_suc_addr;
+   end;
+   out_addr:=term_alt_addr;
+end {expression_gen};
+*)
+
+var i,sym_address:integer;
 begin {main}
   //инициализация
   start_of_file:=true; end_of_file:=false; symbols_num:=0; cur_sym_address:=0;
@@ -261,7 +327,8 @@ writeln('1-st OK');
 writeln('==============');
 
   //проход 2
-  //просмотр с целью нахождения всех нетерминальных символов
+  //просмотр с целью нахождения всех нетерминальных и мета символов правил.
+  //одновременно проводится проверка синтаксиса порождающих правил.
   cur_sym_address:=0;
   sym:=getsym_table;
   while cur_sym_address<=symbols_num do  
@@ -282,25 +349,31 @@ writeln('==============');
      sym:=getsym_table;
   end;
 
+  for i:=1 to symbols_num do
+  begin
+    sym_address:=find_non_terminal_symbol_by_name(sym_table[i].sym);
+    if sym_address<>0 then sym_table[i].kind:=non_terminal;
+  end;
+  
 for i:=1 to symbols_num do
     writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].sym.s_name);
 writeln('2-nd OK');
 writeln('==============');
-
+{
   //проход 3
   //Построение структуры языка на основе форм Бэкуса-Наура
   cur_sym_address:=0;
   sym:=getsym_table;
-  while cur_sym_address<=symbols_num do  
+  while cur_sym_address<=symbols_num do
   begin 
       if sym.kind=ident then
       begin
-        sym_table[cur_sym_address].kind:=non_terminal;
-        sym:=getsym_table
+        sym:=getsym_table;
       end else error;
       if sym.s_name='=' then sym:=getsym_table else error;
-      expression;
+      expression_gen(start_symbol,end_symbol); sym_table[end_symbol].alt:=0;
       if sym.s_name<>'.' then error;
      sym:=getsym_table;
   end;  
+}
 end.
