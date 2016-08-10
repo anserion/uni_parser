@@ -40,8 +40,6 @@ var
 
 //implementation
 
-var cur_node_address: integer;
-
 procedure error;
 begin
    writeln;
@@ -49,95 +47,71 @@ begin
    halt(-1);
 end; {error}
 
-function getnode:t_node;
-var node:t_node;
-begin
-    if (cur_node_address>=0)and(cur_node_address<nodes_num) then
-    begin
-        cur_node_address:=cur_node_address+1;
-        node:=nodes_table[cur_node_address];
-    end else
-    begin
-      cur_node_address:=nodes_num+1;
-      node.sym.s_name:='';
-      node.sym.kind:=nul;
-      node.kind:=empty;
-    end;
-    getnode:=node;
-end; {getnode}
-
-function term(value:t_node):t_node; forward;
+function term(in_addr:integer):integer; forward;
 // factor ::= <symbol> | [<term>]
-function factor(value:t_node):t_node;
-var node:t_node;
+function factor(in_addr:integer):integer;
+var k:integer;
 begin
-  node:=value;
-  if node.sym.s_name='[' then
+  k:=in_addr;
+  if nodes_table[k].sym.s_name='[' then
   begin
-    nodes_table[cur_node_address].kind:=meta;
-    node:=getnode;
-    if node.sym.s_name<>']' then node:=term(node);
-    if node.sym.s_name=']' then
+    nodes_table[k].kind:=meta;
+    k:=k+1;
+    if nodes_table[k].sym.s_name<>']' then k:=term(k);
+    if nodes_table[k].sym.s_name=']' then
     begin
-      nodes_table[cur_node_address].kind:=meta;
-      node:=getnode;
+      nodes_table[k].kind:=meta;
+      k:=k+1;
     end else error;
-  end else node:=getnode;
-  factor:=node;
+  end else k:=k+1;
+  factor:=k;
 end {factor};
 
 // term ::= <factor> {<factor>}
-function term(value:t_node):t_node;
-var node:t_node;
+function term(in_addr:integer):integer;
+var k:integer;
 begin
-   node:=value;
+   k:=in_addr;
    repeat
-     node:=factor(node);
-   until (node.sym.s_name='.')or(node.sym.s_name=',')or(node.sym.s_name=']');
-   term:=node;
+     k:=factor(k);
+   until (nodes_table[k].sym.s_name='.')or
+         (nodes_table[k].sym.s_name=',')or
+         (nodes_table[k].sym.s_name=']');
+   term:=k;
 end {term};
 
 // expression ::= <term> {,<term>} 
-function expression(value:t_node):t_node;
-var node:t_node;
+function expression(in_addr:integer):integer;
+var k:integer;
 begin
-   node:=value;
-   node:=term(node);
-   while node.sym.s_name=',' do
+   k:=term(in_addr);
+   while nodes_table[k].sym.s_name=',' do
    begin
-      nodes_table[cur_node_address].kind:=meta;
-      node:=getnode;
-      node:=term(node);
+      nodes_table[k].kind:=meta;
+      k:=term(k+1);
    end;
-   expression:=node;
+   expression:=k;
 end {expression};
 
 procedure mark_non_terminal_and_meta_nodes(nodes_num:integer;
                                        var nodes_table:t_nodes_table);
 var i,k:integer;
-    node:t_node;
     s:string;
 begin
   //просмотр с целью нахождения всех нетерминальных и мета символов правил.
   //одновременно проводится проверка синтаксиса порождающих правил.
-  cur_node_address:=0;
-  node:=getnode;
-  while cur_node_address<=nodes_num do
+  k:=1;
+  while k<=nodes_num do
   begin
-      if node.sym.kind=ident then
-      begin
-        nodes_table[cur_node_address].kind:=head;
-        node:=getnode;
-      end else error;
-      if node.sym.s_name='=' then
-      begin
-        nodes_table[cur_node_address].kind:=meta;
-        node:=getnode;
-      end else error;
-      node:=expression(node);
-      if node.sym.s_name<>'.' then error;
-      nodes_table[cur_node_address].kind:=meta;
-      node:=getnode;
+    if nodes_table[k].sym.kind=ident then
+    begin
+      nodes_table[k].kind:=head; k:=k+1;
+    end else error;
+    if nodes_table[k].sym.s_name='=' then nodes_table[k].kind:=meta else error;
+    k:=expression(k);
+    if nodes_table[k].sym.s_name<>'.' then error;
+    nodes_table[k].kind:=meta;
+    k:=k+1;
   end;
 
   for i:=1 to nodes_num do
@@ -148,7 +122,67 @@ begin
          if nodes_table[k].sym.s_name=s then nodes_table[k].kind:=non_terminal;
        nodes_table[i].kind:=head;
     end;
-end;
+end; {mark_non_terminal_and_meta_nodes}
+
+//=========================================================================
+
+function term_gen(in_addr:integer):integer; forward;
+// factor ::= <symbol> | [<term>]
+function factor_gen(in_addr:integer):integer;
+var k:integer;
+begin
+  k:=in_addr;
+  if nodes_table[k].sym.s_name='[' then
+  begin
+    k:=k+1;
+    if nodes_table[k].sym.s_name<>']' then k:=term_gen(k);
+    if nodes_table[k].sym.s_name=']' then k:=k+1;
+  end else k:=k+1;
+  factor_gen:=k;
+end {factor_gen};
+
+// term ::= <factor> {<factor>}
+function term_gen(in_addr:integer):integer;
+var k:integer;
+begin
+   k:=in_addr;
+   repeat
+     k:=factor_gen(k);
+   until (nodes_table[k].sym.s_name='.')or
+         (nodes_table[k].sym.s_name=',')or
+         (nodes_table[k].sym.s_name=']');
+   term_gen:=k;//node;
+end {term_gen};
+
+// expression ::= <term> {,<term>} 
+function expression_gen(in_addr:integer):integer;
+var k:integer;
+begin
+   k:=term_gen(in_addr);
+   while nodes_table[k].sym.s_name=',' do
+   begin
+      nodes_table[k].kind:=meta;
+      k:=term_gen(k+1);
+   end;
+   expression_gen:=k;
+end {expression_gen};
+
+procedure gen_nodes_links(nodes_num:integer; var nodes_table:t_nodes_table);
+var k:integer;
+begin
+  k:=1;
+  while k<=nodes_num do
+  begin
+      if nodes_table[k].kind=head then
+      begin
+        nodes_table[k].suc:=k+2;
+        nodes_table[k].alt:=0;
+        k:=expression_gen(nodes_table[k].suc)+1;
+      end;
+  end
+end; {gen_nodes_links}
+
+//=========================================================================
 
 var i:integer;
 begin
@@ -162,12 +196,20 @@ nodes_num:=symbols_num;
 for i:=1 to nodes_num do
 begin
   nodes_table[i].kind:=terminal;
+  nodes_table[i].suc:=i+1;
+  nodes_table[i].alt:=0;
   nodes_table[i].sym:=sym_table[i];
 end;
 mark_non_terminal_and_meta_nodes(nodes_num,nodes_table);
 
+//gen_nodes_links(nodes_num,nodes_table);
+
 for i:=1 to nodes_num do
-    writeln('kind: ',nodes_table[i].kind, ', node: ',nodes_table[i].sym.s_name);
+    writeln(i,
+            ': kind: ',nodes_table[i].kind,
+            ', node: ',nodes_table[i].sym.s_name,
+            ', suc=',nodes_table[i].suc,
+            ', alt=',nodes_table[i].alt);
 writeln('non-terminal, meta and head symbols OK');
 writeln('===============================');
 
