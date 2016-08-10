@@ -21,7 +21,7 @@ const
   max_nodes_table_size=10000;
 
 type
-  t_node_type=(empty,terminal,non_terminal,meta);
+  t_node_type=(empty,terminal,non_terminal,meta,head);
   t_node=record
     sym:t_sym;
     kind:t_node_type; {тип узла}
@@ -112,7 +112,8 @@ begin
    expression:=node;
 end {expression};
 
-procedure nodes_table_analysis(nodes_num:integer; var nodes_table:t_nodes_table);
+procedure mark_non_terminal_and_meta_nodes(nodes_num:integer;
+                                       var nodes_table:t_nodes_table);
 var i,k:integer;
     node:t_node;
     s:string;
@@ -125,7 +126,7 @@ begin
   begin
       if node.sym.kind=ident then
       begin
-        nodes_table[cur_node_address].kind:=non_terminal;
+        nodes_table[cur_node_address].kind:=head;
         node:=getnode;
       end else error;
       if node.sym.s_name='=' then
@@ -140,11 +141,12 @@ begin
   end;
 
   for i:=1 to nodes_num do
-    if nodes_table[i].kind=non_terminal then
+    if nodes_table[i].kind=head then
     begin
        s:=nodes_table[i].sym.s_name;
        for k:=1 to nodes_num do
          if nodes_table[k].sym.s_name=s then nodes_table[k].kind:=non_terminal;
+       nodes_table[i].kind:=head;
     end;
 end;
 
@@ -162,11 +164,11 @@ begin
   nodes_table[i].kind:=terminal;
   nodes_table[i].sym:=sym_table[i];
 end;
-nodes_table_analysis(nodes_num,nodes_table);
+mark_non_terminal_and_meta_nodes(nodes_num,nodes_table);
 
 for i:=1 to nodes_num do
     writeln('kind: ',nodes_table[i].kind, ', node: ',nodes_table[i].sym.s_name);
-writeln('non-terminal and meta symbols OK');
+writeln('non-terminal, meta and head symbols OK');
 writeln('===============================');
 
 end.
