@@ -12,35 +12,35 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-unit rbnf_scanner;
+//unit rbnf_scanner;
 
-interface
+//interface
 uses sym_scanner;
 
-t_sym_node=record
+const
+  max_nodes_table_size=10000;
+
+type
+  t_node_type=(empty,terminal,non_terminal,meta);
+  t_node=record
     sym:t_sym;
-    kind: (terminal,non_terminal,meta);
+    kind:t_node_type; {тип узла}
     suc:integer; {номера символов в таблице символов для перехода "совпало"}
     alt:integer; {номера символов в таблице символов для перехода "не совпало"}
-end;
+  end;
 
+  t_nodes_table=array[1..max_nodes_table_size] of t_node;
 
-procedure error;
-function find_symbol_by_name(sym:t_sym):integer;
-function find_non_terminal_symbol_by_name(sym:t_sym):integer;
-procedure add_symbol_to_table(sym:t_sym);
-function getsym_table:t_sym;
+var
+  sym_table:array[1..max_sym_table_size] of t_sym;
+  symbols_num:integer;
 
-var sym_table:array[1..max_sym_table_size] of t_sym_node;
-    symbols_num:integer;
-    cur_sym_address:integer;
-    start_of_file, end_of_file:boolean;
+  nodes_table:t_nodes_table;
+  nodes_num:integer;
 
-procedure parse(goal:integer; var match:boolean);
+//implementation
 
-implementation
-
-var sym:t_sym;
+var cur_node_address: integer;
 
 procedure error;
 begin
@@ -49,142 +49,124 @@ begin
    halt(-1);
 end; {error}
 
-
-function find_symbol_by_name(sym:t_sym):integer;
-var i,res:integer;
+function getnode:t_node;
+var node:t_node;
 begin
-    res:=0;
-    for i:=1 to symbols_num do
-        if sym_table[i].sym.s_name=sym.s_name then res:=i;
-    find_symbol_by_name:=res;
-end; {find_symbol_by_name}
-
-function find_non_terminal_symbol_by_name(sym:t_sym):integer;
-var i,res:integer;
-begin
-    res:=0;
-    for i:=1 to symbols_num do
-        if (sym_table[i].sym.s_name=sym.s_name) and
-           (sym_table[i].kind=non_terminal) then res:=i;
-    find_non_terminal_symbol_by_name:=res;
-end; {find_non_terminal_symbol_by_name}
-
-procedure add_symbol_to_table(sym:t_sym);
-begin
-    if symbols_num<max_sym_table_size then
+    if (cur_node_address>=0)and(cur_node_address<nodes_num) then
     begin
-        symbols_num:=symbols_num+1;
-        sym_table[symbols_num].sym:=sym;
-        sym_table[symbols_num].kind:=terminal;
-        sym_table[symbols_num].suc:=0;
-        sym_table[symbols_num].alt:=0;
+        cur_node_address:=cur_node_address+1;
+        node:=nodes_table[cur_node_address];
+    end else
+    begin
+      cur_node_address:=nodes_num+1;
+      node.sym.s_name:='';
+      node.sym.kind:=nul;
+      node.kind:=empty;
     end;
-end; {add_symbol_to_table}
+    getnode:=node;
+end; {getnode}
 
-function getsym_table:t_sym;
-var sym:t_sym;
-begin
-    sym.s_name:='OUT';
-    sym.kind:=nul;
-    if cur_sym_address<symbols_num then
-    begin
-        cur_sym_address:=cur_sym_address+1;
-        sym:=sym_table[cur_sym_address].sym;
-    end else cur_sym_address:=symbols_num+1;
-    getsym_table:=sym;
-//    writeln('symbol: ',sym.s_name);    
-end; {getsym_table}
-
-//=========================================================================
-
-procedure term; forward;
+function term(value:t_node):t_node; forward;
 // factor ::= <symbol> | [<term>]
-procedure factor;
+function factor(value:t_node):t_node;
+var node:t_node;
 begin
-  if sym.s_name='[' then
+  node:=value;
+  if node.sym.s_name='[' then
   begin
-    sym_table[cur_sym_address].kind:=meta;
-    sym:=getsym_table;
-    if sym.s_name<>']' then term;
-    if sym.s_name=']' then
+    nodes_table[cur_node_address].kind:=meta;
+    node:=getnode;
+    if node.sym.s_name<>']' then node:=term(node);
+    if node.sym.s_name=']' then
     begin
-      sym_table[cur_sym_address].kind:=meta;
-      sym:=getsym_table
+      nodes_table[cur_node_address].kind:=meta;
+      node:=getnode;
     end else error;
-  end else sym:=getsym_table;
+  end else node:=getnode;
+  factor:=node;
 end {factor};
 
 // term ::= <factor> {<factor>}
-procedure term;
+function term(value:t_node):t_node;
+var node:t_node;
 begin
+   node:=value;
    repeat
-     factor;
-   until (sym.s_name='.')or(sym.s_name=',')or(sym.s_name=']');
+     node:=factor(node);
+   until (node.sym.s_name='.')or(node.sym.s_name=',')or(node.sym.s_name=']');
+   term:=node;
 end {term};
 
 // expression ::= <term> {,<term>} 
-procedure expression;
+function expression(value:t_node):t_node;
+var node:t_node;
 begin
-   term;
-   while sym.s_name=',' do
+   node:=value;
+   node:=term(node);
+   while node.sym.s_name=',' do
    begin
-      sym_table[cur_sym_address].kind:=meta;
-      sym:=getsym_table;
-      term;
+      nodes_table[cur_node_address].kind:=meta;
+      node:=getnode;
+      node:=term(node);
    end;
+   expression:=node;
 end {expression};
 
-//разбор соответствия входного потока символов правилам языка
-procedure parse(goal:integer; var match:boolean);
-var s:integer;
-begin
-    s:=sym_table[goal].suc;
-    repeat
-        if sym_table[s].kind=terminal then
-        begin
-            if sym_table[s].sym.s_name=sym.s_name then
-            begin
-                match:=true;
-                sym:=getsym;
-            end //else match:=(sym_table[s].sym.s_name=empty);
-        end else parse(sym_table[s].alt,match);
-        if match then s:=sym_table[s].suc else s:=sym_table[s].alt;
-    until s=0;
-end; {parse}
-
-var i,sym_address:integer;
+procedure nodes_table_analysis(nodes_num:integer; var nodes_table:t_nodes_table);
+var i,k:integer;
+    node:t_node;
+    s:string;
 begin
   //просмотр с целью нахождения всех нетерминальных и мета символов правил.
   //одновременно проводится проверка синтаксиса порождающих правил.
-  cur_sym_address:=0;
-  sym:=getsym_table;
-  while cur_sym_address<=symbols_num do  
-  begin 
-      if sym.kind=ident then
-      begin
-        sym_table[cur_sym_address].kind:=non_terminal;
-        sym:=getsym_table;
-      end else error;
-      if sym.s_name='=' then
-      begin
-        sym_table[cur_sym_address].kind:=meta;
-        sym:=getsym_table
-      end else error;
-      expression;
-      if sym.s_name<>'.' then error;
-      sym_table[cur_sym_address].kind:=meta;
-     sym:=getsym_table;
-  end;
-
-  for i:=1 to symbols_num do
+  cur_node_address:=0;
+  node:=getnode;
+  while cur_node_address<=nodes_num do
   begin
-    sym_address:=find_non_terminal_symbol_by_name(sym_table[i].sym);
-    if sym_address<>0 then sym_table[i].kind:=non_terminal;
+      if node.sym.kind=ident then
+      begin
+        nodes_table[cur_node_address].kind:=non_terminal;
+        node:=getnode;
+      end else error;
+      if node.sym.s_name='=' then
+      begin
+        nodes_table[cur_node_address].kind:=meta;
+        node:=getnode;
+      end else error;
+      node:=expression(node);
+      if node.sym.s_name<>'.' then error;
+      nodes_table[cur_node_address].kind:=meta;
+      node:=getnode;
   end;
 
+  for i:=1 to nodes_num do
+    if nodes_table[i].kind=non_terminal then
+    begin
+       s:=nodes_table[i].sym.s_name;
+       for k:=1 to nodes_num do
+         if nodes_table[k].sym.s_name=s then nodes_table[k].kind:=non_terminal;
+    end;
+end;
+
+var i:integer;
+begin
+sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);
 for i:=1 to symbols_num do
-    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].sym.s_name);
+    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].s_name);
+writeln('Symbols table OK');
+writeln('================');
+
+nodes_num:=symbols_num;
+for i:=1 to nodes_num do
+begin
+  nodes_table[i].kind:=terminal;
+  nodes_table[i].sym:=sym_table[i];
+end;
+nodes_table_analysis(nodes_num,nodes_table);
+
+for i:=1 to nodes_num do
+    writeln('kind: ',nodes_table[i].kind, ', node: ',nodes_table[i].sym.s_name);
 writeln('non-terminal and meta symbols OK');
 writeln('===============================');
-end.
 
+end.

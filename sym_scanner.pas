@@ -16,7 +16,9 @@ unit sym_scanner;
 
 interface
 
-const max_sym_table_size=100;
+const
+      max_sym_table_size=10000;
+
       digits=['0'..'9'];
       eng_letters=['A'..'Z','a'..'z'];
       spec_letters=[',',';','!','%','?','#','$','@','&','^',
@@ -46,9 +48,9 @@ const max_sym_table_size=100;
 
 type
 t_charfile=file of char;
-
+t_sym_type=(nul,oper,num,ident);
 t_sym=record 
-    kind: (nul,oper,num,ident); {тип идентификатора}
+    kind:t_sym_type; {тип идентификатора}
     tag:integer;   {вспомогательный элемент число-метка (зарезервировано)}
     i_name:integer;  {числовое имя-код идентификатора для быстрой обработки}
     s_name:string;   {строковое имя идентификатора}
@@ -191,9 +193,9 @@ begin
   close(f);
 end;
 
-var i:integer;
-    sym_table:array[1..max_sym_table_size] of t_sym;
-    symbols_num:integer;
+//var i:integer;
+//    sym_table:array[1..max_sym_table_size] of t_sym;
+//    symbols_num:integer;
 
 begin
 //sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);

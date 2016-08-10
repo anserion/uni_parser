@@ -20,6 +20,25 @@ uses sym_scanner, rbnf_scanner;
 
 var sym:t_sym;
 
+//разбор соответствия входного потока символов правилам языка
+procedure parse(goal:integer; var match:boolean);
+var s:integer;
+begin
+    s:=sym_table[goal].suc;
+    repeat
+        if sym_table[s].kind=terminal then
+        begin
+            if sym_table[s].sym.s_name=sym.s_name then
+            begin
+                match:=true;
+                sym:=getsym;
+            end //else match:=(sym_table[s].sym.s_name=empty);
+        end else parse(sym_table[s].alt,match);
+        if match then s:=sym_table[s].suc else s:=sym_table[s].alt;
+    until s=0;
+end; {parse}
+
+
 procedure term_gen(var term_in1,term_in2,term_out:integer); forward;
 procedure factor_gen(var p,q:integer);
 var a,b:integer;
@@ -107,3 +126,4 @@ begin {main}
                                  else writeln('INCORRECT');
   until end_of_file;
 end.
+
