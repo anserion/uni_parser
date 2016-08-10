@@ -17,11 +17,85 @@ unit rbnf_scanner;
 interface
 uses sym_scanner;
 
+t_sym_node=record
+    sym:t_sym;
+    kind: (terminal,non_terminal,meta);
+    suc:integer; {номера символов в таблице символов для перехода "совпало"}
+    alt:integer; {номера символов в таблице символов для перехода "не совпало"}
+end;
+
+
+procedure error;
+function find_symbol_by_name(sym:t_sym):integer;
+function find_non_terminal_symbol_by_name(sym:t_sym):integer;
+procedure add_symbol_to_table(sym:t_sym);
+function getsym_table:t_sym;
+
+var sym_table:array[1..max_sym_table_size] of t_sym_node;
+    symbols_num:integer;
+    cur_sym_address:integer;
+    start_of_file, end_of_file:boolean;
+
 procedure parse(goal:integer; var match:boolean);
 
 implementation
 
 var sym:t_sym;
+
+procedure error;
+begin
+   writeln;
+   writeln('ERROR');
+   halt(-1);
+end; {error}
+
+
+function find_symbol_by_name(sym:t_sym):integer;
+var i,res:integer;
+begin
+    res:=0;
+    for i:=1 to symbols_num do
+        if sym_table[i].sym.s_name=sym.s_name then res:=i;
+    find_symbol_by_name:=res;
+end; {find_symbol_by_name}
+
+function find_non_terminal_symbol_by_name(sym:t_sym):integer;
+var i,res:integer;
+begin
+    res:=0;
+    for i:=1 to symbols_num do
+        if (sym_table[i].sym.s_name=sym.s_name) and
+           (sym_table[i].kind=non_terminal) then res:=i;
+    find_non_terminal_symbol_by_name:=res;
+end; {find_non_terminal_symbol_by_name}
+
+procedure add_symbol_to_table(sym:t_sym);
+begin
+    if symbols_num<max_sym_table_size then
+    begin
+        symbols_num:=symbols_num+1;
+        sym_table[symbols_num].sym:=sym;
+        sym_table[symbols_num].kind:=terminal;
+        sym_table[symbols_num].suc:=0;
+        sym_table[symbols_num].alt:=0;
+    end;
+end; {add_symbol_to_table}
+
+function getsym_table:t_sym;
+var sym:t_sym;
+begin
+    sym.s_name:='OUT';
+    sym.kind:=nul;
+    if cur_sym_address<symbols_num then
+    begin
+        cur_sym_address:=cur_sym_address+1;
+        sym:=sym_table[cur_sym_address].sym;
+    end else cur_sym_address:=symbols_num+1;
+    getsym_table:=sym;
+//    writeln('symbol: ',sym.s_name);    
+end; {getsym_table}
+
+//=========================================================================
 
 procedure term; forward;
 // factor ::= <symbol> | [<term>]
@@ -113,3 +187,4 @@ for i:=1 to symbols_num do
 writeln('non-terminal and meta symbols OK');
 writeln('===============================');
 end.
+
