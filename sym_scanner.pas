@@ -166,7 +166,7 @@ begin {getsym}
     id.kind:=nul;
     if not(end_of_file) then getch(f,ch,ch2);
   end;
-  writeln('symbol: ',id.s_name);
+//  writeln('symbol: ',id.s_name);
   getsym:=id;
 end {getsym};
 //==================================================================
@@ -196,9 +196,9 @@ var i:integer;
     symbols_num:integer;
 
 begin
-sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);
-for i:=1 to symbols_num do
-    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].s_name);
-writeln('Symbols table OK');
-writeln('================');
+//sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);
+//for i:=1 to symbols_num do
+//    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].s_name);
+//writeln('Symbols table OK');
+//writeln('================');
 end.
