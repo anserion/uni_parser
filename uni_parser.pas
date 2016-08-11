@@ -12,118 +12,97 @@
 //See the License for the specific language governing permissions and
 //limitations under the License.
 
-// last version: https://github.com/anserion/uni_parser.git
-
 {проверка синтаксиса программы языка на основе форм Бэкуса-Наура}
 program uni_parser(input, output);
-uses sym_scanner, rbnf_scanner;
+uses sym_scanner, rbnf_scanner, rbnf_gen;
 
+var 
+    prg_table:t_sym_table;
+    prg_symbols_num:integer;
+    cur_sym:integer;
+
+//считывание очередного символа программы
+function getsym:t_sym;
 var sym:t_sym;
-
-//разбор соответствия входного потока символов правилам языка
-procedure parse(goal:integer; var match:boolean);
-var s:integer;
 begin
-    s:=sym_table[goal].suc;
-    repeat
-        if sym_table[s].kind=terminal then
-        begin
-            if sym_table[s].sym.s_name=sym.s_name then
-            begin
-                match:=true;
-                sym:=getsym;
-            end //else match:=(sym_table[s].sym.s_name=empty);
-        end else parse(sym_table[s].alt,match);
-        if match then s:=sym_table[s].suc else s:=sym_table[s].alt;
-    until s=0;
-end; {parse}
-
-
-procedure term_gen(var term_in1,term_in2,term_out:integer); forward;
-procedure factor_gen(var p,q:integer);
-var a,b:integer;
-begin
-  if sym.s_name='[' then
+  sym.s_name:='';
+  sym.kind:=nul;
+  if cur_sym<=prg_symbols_num then
   begin
-    sym_table[cur_sym_address].kind:=meta;
-    sym:=getsym_table;
-    if sym.s_name<>']' then
-    begin
-      term_gen(p,a,b);
-      sym_table[b].suc:=p;
-      sym_table[a].alt:=b;
-      q:=b;
-    end;
-    if sym.s_name=']' then
-    begin
-      sym_table[cur_sym_address].kind:=meta;
-      sym:=getsym_table
-    end else error;
+    cur_sym:=cur_sym+1;
+    sym:=prg_table[cur_sym];
   end else
   begin
-    p:=cur_sym_address; q:=cur_sym_address;
-    sym:=getsym_table;
+    sym.s_name='OUT';
+    cur_sym:=prg_symbols_num+1;
   end;
-end {factor_gen};
+  getsym:=sym;
+end; {getsym}
 
-procedure term_gen(var term_in1,term_in2,term_out:integer);
-var a,b:integer;
+//разбор соответствия входного потока символов правилам языка
+function parse(goal:integer; sym:t_sym):boolean);
+var s:integer; match:boolean;
 begin
-   factor_gen(term_in1,a); term_in2:=a;
-   repeat
-     factor_gen(sym_table[a].suc,b);
-     sym_table[b].alt:=0;
-     a:=b;
-   until (sym.s_name='.')or(sym.s_name=',')or(sym.s_name=']');
-   term_out:=a;
-end {term_gen};
+    match:=false;
+    s:=nodes_table[goal].suc;
+    while nodes_table[s].kind=meta do s:=nodes_table[s].suc;
+    repeat
+        if (nodes_table[s].kind=terminal)and
+           (nodes_table[s].s_name=sym.s_name) then match:=true;
+        if (nodes_table[s].kind=non_terminal) then
+           match:=parse(nodes_table[s].alt,getsym);
+        if match then s:=nodes_table[s].suc else s:=nodes_table[s].alt;
+    until s=0;
+    parse:=match;
+end; {parse}
 
-procedure expression_gen(var expr_in_addr,expr_out_addr:integer);
-var a,b,c:integer;
-begin
-   term_gen(expr_in_addr,a,c);
-   sym_table[c].suc:=0;
-   while sym.s_name=',' do
-   begin
-      sym_table[cur_sym_address].kind:=meta;
-      sym:=getsym_table;
-      term_gen(sym_table[a].alt,b,c);
-      sym_table[c].suc:=0;
-      a:=b;
-   end;
-   expr_out_addr:=a;
-end {expression_gen};
+//=========================================================================
 
-var i,start_sym_address,end_sym_address:integer;
-    start_sym:t_sym;
+var i,goal:integer;
     flag:boolean;
 
 begin {main}
 
   //Построение структуры языка на основе порождающих правил Бэкуса-Наура
-  start_sym:=getsym;
-  start_sym_address:=find_symbol_by_name(start_sym);
-//  expression_gen(start_sym_address,end_sym_address);
-  sym_table[end_sym_address].alt:=0;
+  sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);
+  nodes_num:=symbols_num;
+  for i:=1 to nodes_num do
+  begin
+    nodes_table[i].kind:=terminal;
+    nodes_table[i].suc:=0;
+    nodes_table[i].alt:=0;
+    nodes_table[i].s_name:=sym_table[i].s_name;
+    nodes_table[i].kind_sym:=sym_table[i].kind;
+  end;
+  mark_non_terminal_and_meta_nodes(nodes_num,nodes_table);
+
+  //gen_nodes_links(nodes_num,nodes_table);
+
+  for i:=1 to nodes_num do
+      writeln(i,
+              ': ',nodes_table[i].s_name,
+              '  ',nodes_table[i].kind,
+              ' ',nodes_table[i].kind_sym,
+              ', suc=',nodes_table[i].suc,
+              ', alt=',nodes_table[i].alt);
+  writeln('===============================');
 
   //проверка все ли нетерминальные символы определены
   flag:=false;
-  for i:=1 to symbols_num do
-  if (sym_table[i].kind=non_terminal) and (sym_table[i].suc=0) then
+  for i:=1 to nodes_num do
+  if (nodes_table[i].kind=non_terminal) and (nodes_table[i].alt=0) then
   begin
-    writeln('UNDEFINED SYMBOL: ',sym_table[i].sym.s_name);
+    writeln('UNDEFINED SYMBOL: ',nodes_table[i].s_name);
     flag:=true;
   end;
   if flag then halt(-1);
-  
-  //проверка синтаксиса текстового файла по правилам, разобранным выше
-  flag:=true;
-  repeat
-    write(' ');
-    sym:=getsym;
-    parse(start_sym_address,flag);
-    if flag and (sym.s_name='.') then writeln('CORRECT')
-                                 else writeln('INCORRECT');
-  until end_of_file;
-end.
 
+  //загрузка транслируемой программы
+  sym_table_read_from_file('test_program.xxx',prg_table,prg_symbols_num);
+
+  //проверка синтаксиса программы (точка входа - первое правило РБНФ)
+  flag:=true;
+  goal:=1; while nodes_table[goal].kind<>head do goal:=goal+1;
+  flag:=parse(goal,getsym);
+  if flag then writeln('CORRECT') else writeln('INCORRECT');
+end.

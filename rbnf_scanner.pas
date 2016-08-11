@@ -59,11 +59,13 @@ begin
   if nodes_table[k].s_name='[' then
   begin
     nodes_table[k].kind:=meta;
+    nodes_table[k].suc:=k+1; nodes_table[k].alt:=0;
     k:=k+1;
     if nodes_table[k].s_name<>']' then k:=term(k,nodes_table);
     if nodes_table[k].s_name=']' then
     begin
       nodes_table[k].kind:=meta;
+      nodes_table[k].suc:=k+1; nodes_table[k].alt:=0;
       k:=k+1;
     end else error;
   end else k:=k+1;
@@ -91,6 +93,7 @@ begin
    while nodes_table[k].s_name=',' do
    begin
       nodes_table[k].kind:=meta;
+      nodes_table[k].suc:=k+1; nodes_table[k].alt:=0;
       k:=term(k+1,nodes_table);
    end;
    expression:=k;
@@ -108,12 +111,19 @@ begin
   begin
     if nodes_table[k].kind_sym=ident then
     begin
-      nodes_table[k].kind:=head; k:=k+1;
+      nodes_table[k].kind:=head;
+      nodes_table[k].suc:=k+1; nodes_table[k].alt:=0;
+      k:=k+1;
     end else error;
-    if nodes_table[k].s_name='=' then nodes_table[k].kind:=meta else error;
+    if nodes_table[k].s_name='=' then
+    begin
+      nodes_table[k].kind:=meta;
+      nodes_table[k].suc:=k+1; nodes_table[k].alt:=0;
+    end else error;
     k:=expression(k,nodes_table);
     if nodes_table[k].s_name<>'.' then error;
     nodes_table[k].kind:=meta;
+    nodes_table[k].suc:=0; nodes_table[k].alt:=0;
     k:=k+1;
   end;
 
