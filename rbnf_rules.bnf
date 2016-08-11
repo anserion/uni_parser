@@ -1,2 +1,4 @@
-A=P B Q FF.
+A=P B,[P FF].
+B=KZ,N+A,[[] XX[] []].
+AC=ZZ[R]YYM,U[B]UMA.
 end_of_file

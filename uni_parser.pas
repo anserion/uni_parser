@@ -45,7 +45,6 @@ var s:integer; match:boolean;
 begin
     match:=false;
     s:=nodes_table[goal].suc;
-    while nodes_table[s].kind=meta do s:=nodes_table[s].suc;
     repeat
         if (nodes_table[s].kind=terminal)and
            (nodes_table[s].s_name=sym.s_name) then match:=true;
