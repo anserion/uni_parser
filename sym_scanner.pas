@@ -49,10 +49,8 @@ const
 type
 t_charfile=file of char;
 t_sym_type=(nul,oper,num,ident);
-t_sym=record 
-    kind:t_sym_type; {тип идентификатора}
-    tag:integer;   {вспомогательный элемент число-метка (зарезервировано)}
-    i_name:integer;  {числовое имя-код идентификатора для быстрой обработки}
+t_sym=record
+    kind:t_sym_type; {тип идентификатора: nul, oper, num, ident}
     s_name:string;   {строковое имя идентификатора}
 end;
 
