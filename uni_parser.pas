@@ -44,12 +44,12 @@ function parse(goal:integer; sym:t_sym):boolean);
 var s:integer; match:boolean;
 begin
     match:=false;
-    s:=nodes_table[goal].suc;
+    s:=nodes_table[goal].entry;
     repeat
         if (nodes_table[s].kind=terminal)and
            (nodes_table[s].s_name=sym.s_name) then match:=true;
         if (nodes_table[s].kind=non_terminal) then
-           match:=parse(nodes_table[s].alt,getsym);
+           match:=parse(nodes_table[s].entry,getsym);
         if match then s:=nodes_table[s].suc else s:=nodes_table[s].alt;
     until s=0;
     parse:=match;
@@ -89,7 +89,7 @@ begin {main}
   //проверка все ли нетерминальные символы определены
   flag:=false;
   for i:=1 to nodes_num do
-  if (nodes_table[i].kind=non_terminal) and (nodes_table[i].alt=0) then
+  if (nodes_table[i].kind=non_terminal) and (nodes_table[i].entry=0) then
   begin
     writeln('UNDEFINED SYMBOL: ',nodes_table[i].s_name);
     flag:=true;

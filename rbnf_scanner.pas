@@ -25,6 +25,7 @@ type
   t_node=record
     suc:integer; {номера символов в таблице символов для перехода "совпало"}
     alt:integer; {номера символов в таблице символов для перехода "не совпало"}
+    entry:integer; {адрес входа (расшифровки) нетерминального символа}
     kind:t_node_type; {тип узла: empty, terminal, non_terminal, meta, head}
     kind_sym:t_sym_type; {тип символа: nul, oper, num, ident}
     s_name:string;
