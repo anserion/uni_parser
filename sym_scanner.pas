@@ -51,7 +51,7 @@ type
   t_sym=(nul,oper,num,ident);
   t_toc=(empty,terminal,non_term,meta,head);
 
-  t_tocken=record
+  t_token=record
     suc:integer; {номера символов в таблице символов для перехода "совпало"}
     alt:integer; {номера символов в таблице символов для перехода "не совпало"}
     entry:integer; {адрес входа (расшифровки) нетерминального символа}
@@ -60,9 +60,9 @@ type
     s_name:string;
   end;
 
-  t_tocken_table=array[1..max_symbols] of t_tocken;
+  t_token_table=array[1..max_symbols] of t_token;
 
-function symbols_from_file(f: string;var tocken_table:t_tocken_table):integer;
+function symbols_from_file(f: string;var token_table:t_token_table):integer;
 
 implementation
 
@@ -86,8 +86,8 @@ begin
   end;
 end {getch};
 
-function getsym(var f:t_charfile):t_tocken;
-var id: t_tocken;
+function getsym(var f:t_charfile):t_token;
+var id: t_token;
 begin {getsym}
   while (ch=chr(10))or(ch=chr(13)) do getch(f,ch,ch2);
 
@@ -169,8 +169,8 @@ begin {getsym}
 end {getsym};
 //==================================================================
 
-function symbols_from_file(f: string;var tocken_table:t_tocken_table):integer;
-var ff:t_charfile; sym:t_tocken; symbols_num:integer;
+function symbols_from_file(f: string;var token_table:t_token_table):integer;
+var ff:t_charfile; sym:t_token; symbols_num:integer;
 begin
   start_of_file:=true; end_of_file:=false;
   symbols_num:=0; 
@@ -181,7 +181,7 @@ begin
   while (sym.s_name<>'end_of_file') do
   begin
     symbols_num:=symbols_num+1;
-    tocken_table[symbols_num]:=sym;
+    token_table[symbols_num]:=sym;
     sym:=getsym(ff);
   end;
   close(ff);

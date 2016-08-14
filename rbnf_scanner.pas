@@ -20,11 +20,11 @@ uses sym_scanner;
 // factor ::= <symbol> | [<term>]
 // term ::= <factor> {<factor>}
 // expression ::= <term> {,<term>}
-function factor(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
-function term(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
-function expression(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
-function skip_nul(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
-procedure mark_tockens(tockens_num:integer;var tocken_table:t_tocken_table);
+function factor(k,tokens_num:integer;var token_table:t_token_table):integer;
+function term(k,tokens_num:integer;var token_table:t_token_table):integer;
+function expression(k,tokens_num:integer;var token_table:t_token_table):integer;
+function skip_nul(k,tokens_num:integer;var token_table:t_token_table):integer;
+procedure mark_tokens(tokens_num:integer;var token_table:t_token_table);
 
 implementation
 
@@ -35,87 +35,87 @@ begin
    halt(-1);
 end; {error}
 
-function skip_nul(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
+function skip_nul(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
-    while (k<tockens_num)and(tocken_table[k].kind_sym=nul) do k:=k+1;
+    while (k<tokens_num)and(token_table[k].kind_sym=nul) do k:=k+1;
     skip_nul:=k;
 end;
 
 // factor ::= <symbol> | [<term>]
-function factor(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
+function factor(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
-  if tocken_table[k].s_name='[' then
+  if token_table[k].s_name='[' then
   begin
-    tocken_table[k].kind_toc:=meta;
-    k:=skip_nul(k+1,tockens_num,tocken_table);
-    if tocken_table[k].s_name<>']' then k:=term(k,tockens_num,tocken_table);
-    if tocken_table[k].s_name=']' then
+    token_table[k].kind_toc:=meta;
+    k:=skip_nul(k+1,tokens_num,token_table);
+    if token_table[k].s_name<>']' then k:=term(k,tokens_num,token_table);
+    if token_table[k].s_name=']' then
     begin
-      tocken_table[k].kind_toc:=meta;
-      k:=skip_nul(k+1,tockens_num,tocken_table);
+      token_table[k].kind_toc:=meta;
+      k:=skip_nul(k+1,tokens_num,token_table);
     end else error;
-  end else k:=skip_nul(k+1,tockens_num,tocken_table);
+  end else k:=skip_nul(k+1,tokens_num,token_table);
   factor:=k;
 end {factor};
 
 // term ::= <factor> {<factor>}
-function term(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
+function term(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
    repeat
-     k:=factor(k,tockens_num,tocken_table);
-   until (tocken_table[k].s_name='.')or
-         (tocken_table[k].s_name=',')or
-         (tocken_table[k].s_name=']');
+     k:=factor(k,tokens_num,token_table);
+   until (token_table[k].s_name='.')or
+         (token_table[k].s_name=',')or
+         (token_table[k].s_name=']');
    term:=k;
 end {term};
 
 // expression ::= <term> {,<term>} 
-function expression(k,tockens_num:integer;var tocken_table:t_tocken_table):integer;
+function expression(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
-   k:=term(k,tockens_num,tocken_table);
-   while tocken_table[k].s_name=',' do
+   k:=term(k,tokens_num,token_table);
+   while token_table[k].s_name=',' do
    begin
-      tocken_table[k].kind_toc:=meta;
-      k:=term(skip_nul(k+1,tockens_num,tocken_table),tockens_num,tocken_table);
+      token_table[k].kind_toc:=meta;
+      k:=term(skip_nul(k+1,tokens_num,token_table),tokens_num,token_table);
    end;
    expression:=k;
 end {expression};
 
-procedure mark_tockens(tockens_num:integer;var tocken_table:t_tocken_table);
+procedure mark_tokens(tokens_num:integer;var token_table:t_token_table);
 var i,k:integer;
     s:string;
 begin
   //просмотр с целью нахождения всех нетерминальных и мета символов правил.
   //одновременно проводится проверка синтаксиса порождающих правил.
-  for i:=1 to tockens_num do tocken_table[i].kind_toc:=terminal;
+  for i:=1 to tokens_num do token_table[i].kind_toc:=terminal;
 
-  k:=skip_nul(1,tockens_num,tocken_table);
-  while k<tockens_num do
+  k:=skip_nul(1,tokens_num,token_table);
+  while k<tokens_num do
   begin
-    if tocken_table[k].kind_sym=ident then
+    if token_table[k].kind_sym=ident then
     begin
-      tocken_table[k].kind_toc:=head;
-      k:=skip_nul(k+1,tockens_num,tocken_table);
+      token_table[k].kind_toc:=head;
+      k:=skip_nul(k+1,tokens_num,token_table);
     end else error;
-    if tocken_table[k].s_name='=' then tocken_table[k].kind_toc:=meta else error;
-    k:=expression(k,tockens_num,tocken_table);
-    if tocken_table[k].s_name<>'.' then error;
-    tocken_table[k].kind_toc:=meta;
-    k:=skip_nul(k+1,tockens_num,tocken_table);
+    if token_table[k].s_name='=' then token_table[k].kind_toc:=meta else error;
+    k:=expression(k,tokens_num,token_table);
+    if token_table[k].s_name<>'.' then error;
+    token_table[k].kind_toc:=meta;
+    k:=skip_nul(k+1,tokens_num,token_table);
   end;
 
-  for i:=1 to tockens_num do
-    if tocken_table[i].kind_sym=nul then tocken_table[i].kind_toc:=empty;
+  for i:=1 to tokens_num do
+    if token_table[i].kind_sym=nul then token_table[i].kind_toc:=empty;
 
-  for i:=1 to tockens_num do
-    if tocken_table[i].kind_toc=head then
+  for i:=1 to tokens_num do
+    if token_table[i].kind_toc=head then
     begin
-       s:=tocken_table[i].s_name;
-       for k:=1 to tockens_num do
-         if tocken_table[k].s_name=s then tocken_table[k].kind_toc:=non_term;
-       tocken_table[i].kind_toc:=head;
+       s:=token_table[i].s_name;
+       for k:=1 to tokens_num do
+         if token_table[k].s_name=s then token_table[k].kind_toc:=non_term;
+       token_table[i].kind_toc:=head;
     end;
-end; {mark_tockens}
+end; {mark_tokens}
 
 begin
 end.
