@@ -17,14 +17,14 @@ unit sym_scanner;
 interface
 
 const
-      max_sym_table_size=10000;
+      max_symbols=10000;
 
       digits=['0'..'9'];
       eng_letters=['A'..'Z','a'..'z'];
       spec_letters=[',',';','!','%','?','#','$','@','&','^',
                     '/','\','|','=','<','>','(',')','{','}',
                     '[',']','+','-','*','.','''','"','`',':','~'];
-//локализация не работает на 2 байта/символ UTF8
+
       rus_cp1251_letters=['�','�','�','�','�','�','�','�','�','�','�',
                           '�','�','�','�','�','�','�','�','�','�','�',
                           '�','�','�','�','�','�','�','�','�','�','�',
@@ -47,25 +47,28 @@ const
                          '�','�','�','�','�','�','�','�','�','�','�'];
 
 type
-t_charfile=file of char;
-t_sym_type=(nul,oper,num,ident);
-t_sym=record
-    kind:t_sym_type; {тип идентификатора: nul, oper, num, ident}
-    s_name:string;   {строковое имя идентификатора}
-end;
+  t_charfile=file of char;
+  t_sym=(nul,oper,num,ident);
+  t_toc=(empty,terminal,non_term,meta,head);
 
-t_sym_table=array[1..max_sym_table_size] of t_sym;
+  t_tocken=record
+    suc:integer; {номера символов в таблице символов для перехода "совпало"}
+    alt:integer; {номера символов в таблице символов для перехода "не совпало"}
+    entry:integer; {адрес входа (расшифровки) нетерминального символа}
+    kind_toc:t_toc; {тип узла: empty, terminal, non_terminal, meta, head}
+    kind_sym:t_sym; {тип символа: nul, oper, num, ident}
+    s_name:string;
+  end;
 
-procedure sym_table_read_from_file(filename: string;
-                                   var sym_table:t_sym_table;
-                                   var symbols_num:integer);
+  t_tocken_table=array[1..max_symbols] of t_tocken;
+
+function symbols_from_file(f: string;var tocken_table:t_tocken_table):integer;
 
 implementation
 
-var ch,ch2: char; {последний прочитанный входной символ и следующий за ним}
+var ch,ch2: char;
     start_of_file, end_of_file:boolean;
 
-{прочитать из потока ввода два символа и поместить их в ch, ch2}
 procedure getch(var f:t_charfile; var ch,ch2:char);
 begin
   if end_of_file then begin write('UNEXPECTED END OF FILE'); halt(-1); end;
@@ -83,22 +86,17 @@ begin
   end;
 end {getch};
 
-{найти во входном потоке терминальный символ}
-function getsym(var f:t_charfile):t_sym;
-var id: t_sym;
+function getsym(var f:t_charfile):t_tocken;
+var id: t_tocken;
 begin {getsym}
-  {пропускаем возможные пробелы и концы строк}
-  while (ch=' ')or(ch=chr(10))or(ch=chr(13)) do getch(f,ch,ch2);
+  while (ch=chr(10))or(ch=chr(13)) do getch(f,ch,ch2);
 
   id.s_name:='';
-  id.kind:=nul;
+  id.kind_sym:=nul;
 
-  {если ch - буква или знак подчеркивния, то это - начало имени}
-  //локализация не работает на 2-х байтовых символах UTF8
   if (ch in ['_']+eng_letters+rus_cp1251_letters) then
   begin
-    id.kind:=ident;
-    {читаем посимвольно имя id[], состоящее из букв A-Z, цифр, подчеркивания}
+    id.kind_sym:=ident;
     repeat
       id.s_name:=id.s_name+ch;
       getch(f,ch,ch2);
@@ -107,9 +105,9 @@ begin {getsym}
        id.s_name:=id.s_name+ch;
   end
     else
-  if ch in digits then {если ch - цифра, то это - начало числа}
+  if ch in digits then
   begin
-    id.kind:=num;
+    id.kind_sym:=num;
     repeat
       id.s_name:=id.s_name+ch;
       getch(f,ch,ch2);
@@ -128,11 +126,9 @@ begin {getsym}
   end
     else
   if ch in spec_letters then
-  begin {односимвольный и некоторые двусимвольные идентификаторы}
-    id.kind:=oper;
-    {односимвольные спецсимволы}
+  begin
+    id.kind_sym:=oper;
     id.s_name:=ch;
-    {разбор случаев двусимвольных спецкомбинаций}
     if (ch='-')and(ch2='>') then begin id.s_name:='->'; getch(f,ch,ch2); end;
     if (ch='<')and(ch2='-') then begin id.s_name:='<-'; getch(f,ch,ch2); end;
     if (ch='<')and(ch2='>') then begin id.s_name:='<>'; getch(f,ch,ch2); end;
@@ -152,7 +148,9 @@ begin {getsym}
     if (ch='|')and(ch2='|') then begin id.s_name:='||'; getch(f,ch,ch2); end;
     if (ch='&')and(ch2='&') then begin id.s_name:='&&'; getch(f,ch,ch2); end;
     if (ch='^')and(ch2='^') then begin id.s_name:='^^'; getch(f,ch,ch2); end;
-    {смайлики :) }
+    if (ch='''')and(ch2='''') then begin id.s_name:=''''''; getch(f,ch,ch2); end;
+    if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
+
     if (ch=':')and(ch2=')') then begin id.s_name:=':)'; getch(f,ch,ch2); end;
     if (ch=':')and(ch2='(') then begin id.s_name:=':('; getch(f,ch,ch2); end;
     if (ch=':')and(ch2=']') then begin id.s_name:=':]'; getch(f,ch,ch2); end;
@@ -163,7 +161,7 @@ begin {getsym}
     else
   begin
     id.s_name:=ch;
-    id.kind:=nul;
+    id.kind_sym:=nul;
     if not(end_of_file) then getch(f,ch,ch2);
   end;
 //  writeln('symbol: ',id.s_name);
@@ -171,34 +169,25 @@ begin {getsym}
 end {getsym};
 //==================================================================
 
-procedure sym_table_read_from_file(filename: string;
-                                   var sym_table:t_sym_table;
-                                   var symbols_num:integer);
-var f:t_charfile; sym:t_sym;
+function symbols_from_file(f: string;var tocken_table:t_tocken_table):integer;
+var ff:t_charfile; sym:t_tocken; symbols_num:integer;
 begin
   start_of_file:=true; end_of_file:=false;
   symbols_num:=0; 
-  assign(f,filename);
-  reset(f);
-  getch(f,ch,ch2); sym:=getsym(f);
-  //читаем все символы из файла в таблицу символов
+  assign(ff,f);
+  reset(ff);
+  getch(ff,ch,ch2); sym:=getsym(ff);
+
   while (sym.s_name<>'end_of_file') do
   begin
     symbols_num:=symbols_num+1;
-    sym_table[symbols_num]:=sym;
-    sym:=getsym(f);
+    tocken_table[symbols_num]:=sym;
+    sym:=getsym(ff);
   end;
-  close(f);
+  close(ff);
+  symbols_from_file:=symbols_num;
 end;
 
-//var i:integer;
-//    sym_table:array[1..max_sym_table_size] of t_sym;
-//    symbols_num:integer;
-
 begin
-//sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);
-//for i:=1 to symbols_num do
-//    writeln('kind: ',sym_table[i].kind, ', symbol: ',sym_table[i].s_name);
-//writeln('Symbols table OK');
-//writeln('================');
 end.
+

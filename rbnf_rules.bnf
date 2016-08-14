@@ -1,4 +1,4 @@
-A=P B,[P FF].
-B=KZ,N+A,[[] XX[] []].
-AC=ZZ[R]YYM,U[B]UMA.
+A= x, (B) .
+B = A C .
+ C = [+A].
 end_of_file
