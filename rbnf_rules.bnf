@@ -1,4 +1,4 @@
 A= x, (B).
 B = A C .
-C = [f [a b]], x.
+C = [+A].
 end_of_file
