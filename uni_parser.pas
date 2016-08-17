@@ -39,27 +39,29 @@ end; {getsym}
 
 //разбор соответствия входного потока символов правилам языка
 function parse(goal:integer; var sym:t_token):boolean;
-var s:integer; match:boolean;
+var s:integer; match:boolean; flag:boolean;
 begin
     match:=false;
     s:=token_table[goal].entry;
-    writeln('-->goal="',token_table[goal].s_name,' s=',s,' token="',token_table[s].s_name,'" sym_in="',sym.s_name,'"');
     repeat
-        if (token_table[s].kind_toc=terminal)and
-           (token_table[s].s_name=sym.s_name) then 
+        flag:=false;
+        if (token_table[s].kind_toc=terminal) then
+        begin
+           if (token_table[s].s_name=sym.s_name) then
            begin
-             writeln('term token="',token_table[s].s_name,'":',s,' OK');
              match:=true; sym:=getsym;
+           end else
+           begin
+             match:=token_table[s].alt=-1;
+             flag:=match;
            end;
+        end;
         if (token_table[s].kind_toc=non_term) then
            begin
-             writeln('non_term token="',token_table[s].s_name,'":',s);
              match:=parse(token_table[s].entry,sym);
            end;
-        if match then begin s:=token_table[s].suc; writeln('   suc=',s); end
-                 else begin s:=token_table[s].alt; writeln('   alt=',s); end;
-    until s=0;
-    writeln('<--goal="',token_table[goal].s_name,' parse=',match,' sym_out="',sym.s_name,'"');
+        if match then s:=token_table[s].suc else s:=token_table[s].alt;
+    until (s=0) or flag;
     parse:=match;
 end; {parse}
 
@@ -116,11 +118,10 @@ begin {main}
   //проверка синтаксиса программы (точка входа - первое правило РБНФ)
   goal:=1; while token_table[goal].kind_toc<>head do goal:=goal+1;
   writeln('goal: ',token_table[goal].s_name,', address=',goal);
-{
+
   flag:=true; cur_sym:=1;
-//  repeat sym:=getsym; writeln(sym.s_name) ;until sym.s_name='OUT';
   sym:=getsym;
   flag:=parse(goal,sym);
   if flag then writeln('CORRECT') else writeln('INCORRECT');
-}
+
 end.

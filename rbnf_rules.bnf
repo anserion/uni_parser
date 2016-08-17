@@ -1,2 +1,4 @@
-A= x y [ z ].
+A= x, (B).
+B = A C .
+C = [+A].
 end_of_file
