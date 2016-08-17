@@ -1,0 +1,31 @@
+prog= block; .
+
+const_rep= [ \, name = number].
+var_rep= [ \, var name].
+block= [const name = number const_rep ; ] [var name var_rep ; ].
+
+end_of_file
+
+
+
+        [procedure name ; block ; ]
+        operator .
+end_of_file
+
+operator = name := expression,
+           call name,
+           begin operator [operator ; ] end,
+           if condition then operator,
+           while condition do operator,
+           empty .
+cond_oper = =, <>, <, >, <=, >= .
+condition = odd expression,
+            expression cond_oper expression .
+plus_minus = +, - .
+plus_minus_empty = +, -, empty .
+expression = plus_minus_empty term [plus_minus term] .
+mul_div = *, / .
+term = factor [mul_div factor] .
+factor = name, number, ( expression ) .
+empty = [ ] .
+end_of_file

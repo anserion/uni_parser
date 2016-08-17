@@ -74,7 +74,7 @@ var
 
 begin {main}
   //Построение структуры языка на основе порождающих правил Бэкуса-Наура
-  tokens_num:=symbols_from_file('rbnf_rules.bnf',token_table);
+  tokens_num:=symbols_from_file('lang.rbnf',token_table);
 
   mark_tokens(tokens_num,token_table);
   for i:=1 to tokens_num do

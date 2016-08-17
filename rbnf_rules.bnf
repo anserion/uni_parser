@@ -1,4 +1,12 @@
-A= x, (B).
-B = A C .
-C = [+A].
-end_of_file
+empty= [ ] .
+prog= block ; .
+block= [const name = number [, const name = number] ; ]
+       [var name [, var name] ; ] 
+       [procedure name ; block ; ]
+       operator .
+operator= name := expression,
+          call name,
+          begin operator [operator ; ] end,
+          if condition then operator,
+          while condition do operator,
+          empty .
