@@ -15,18 +15,13 @@
 unit rbnf_scanner;
 
 interface
-uses sym_scanner;
+uses token_utils, sym_scanner;
 
-// factor ::= <symbol> | [<term>]
-// term ::= <factor> {<factor>}
-// expression ::= <term> {,<term>}
-function factor(k,tokens_num:integer;var token_table:t_token_table):integer;
-function term(k,tokens_num:integer;var token_table:t_token_table):integer;
-function expression(k,tokens_num:integer;var token_table:t_token_table):integer;
-function skip_nul(k,tokens_num:integer;var token_table:t_token_table):integer;
 procedure mark_tokens(tokens_num:integer;var token_table:t_token_table);
 
 implementation
+
+function term(k,tokens_num:integer;var token_table:t_token_table):integer; forward;
 
 procedure error;
 begin
@@ -34,12 +29,6 @@ begin
    writeln('ERROR');
    halt(-1);
 end; {error}
-
-function skip_nul(k,tokens_num:integer;var token_table:t_token_table):integer;
-begin
-    while (k<tokens_num)and(token_table[k].kind_sym=nul) do k:=k+1;
-    skip_nul:=k;
-end;
 
 // factor ::= <symbol> | [<term>]
 function factor(k,tokens_num:integer;var token_table:t_token_table):integer;

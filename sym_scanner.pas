@@ -15,52 +15,7 @@
 unit sym_scanner;
 
 interface
-
-const
-      max_symbols=10000;
-
-      digits=['0'..'9'];
-      eng_letters=['A'..'Z','a'..'z'];
-      spec_letters=[',',';','!','%','?','#','$','@','&','^',
-                    '/','\','|','=','<','>','(',')','{','}',
-                    '[',']','+','-','*','.','''','"','`',':','~'];
-
-      rus_cp1251_letters=['À','Á','Â','Ã','Ä','Å','¨','Æ','Ç','È','É',
-                          'Ê','Ë','Ì','Í','Î','Ï','Ğ','Ñ','Ò','Ó','Ô',
-                          'Õ','Ö','×','Ø','Ù','Û','Ü','Ú','İ','Ş','ß',
-                          'à','á','â','ã','ä','å','¸','æ','ç','è','é',
-                          'ê','ë','ì','í','î','ï','ğ','ñ','ò','ó','ô',
-                          'õ','ö','÷','ø','ù','û','ü','ú','ı','ş','ÿ'];
-
-      rus_cp866_letters=['€','','‚','ƒ','„','…','ğ','†','‡','ˆ','‰',
-                         'Š','‹','Œ','','','','','‘','’','“','”',
-                         '•','–','—','˜','™','›','œ','š','','','Ÿ',
-                         ' ','¡','¢','£','¤','¥','ñ','¦','§','¨','©',
-                         'ª','«','¬','­','®','¯','à','á','â','ã','ä',
-                         'å','æ','ç','è','é','ë','ì','ê','í','î','ï'];
-
-      rus_koi8r_letters=['á','â','÷','ç','ä','å','³','ö','ú','é','ê',
-                         'ë','ì','í','î','ï','ğ','ò','ó','ô','õ','æ',
-                         'è','ã','ş','û','ı','ù','ø','ÿ','ü','à','ñ',
-                         'Á','Â','×','Ç','Ä','Å','£','Ö','Ú','É','Ê',
-                         'Ë','Ì','Í','Î','Ï','Ğ','Ò','Ó','Ô','Õ','Æ',
-                         'È','Ã','Ş','Û','İ','Ù','Ø','ß','Ü','À','Ñ'];
-
-type
-  t_charfile=file of char;
-  t_sym=(nul,oper,num,ident);
-  t_toc=(empty,terminal,non_term,meta,head);
-
-  t_token=record
-    suc:integer; {Ğ½Ğ¾Ğ¼ĞµÑ€Ğ° ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ¾Ğ² Ğ² Ñ‚Ğ°Ğ±Ğ»Ğ¸Ñ†Ğµ ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ¾Ğ² Ğ´Ğ»Ñ Ğ¿ĞµÑ€ĞµÑ…Ğ¾Ğ´Ğ° "ÑĞ¾Ğ²Ğ¿Ğ°Ğ»Ğ¾"}
-    alt:integer; {Ğ½Ğ¾Ğ¼ĞµÑ€Ğ° ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ¾Ğ² Ğ² Ñ‚Ğ°Ğ±Ğ»Ğ¸Ñ†Ğµ ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ¾Ğ² Ğ´Ğ»Ñ Ğ¿ĞµÑ€ĞµÑ…Ğ¾Ğ´Ğ° "Ğ½Ğµ ÑĞ¾Ğ²Ğ¿Ğ°Ğ»Ğ¾"}
-    entry:integer; {Ğ°Ğ´Ñ€ĞµÑ Ğ²Ñ…Ğ¾Ğ´Ğ° (Ñ€Ğ°ÑÑˆĞ¸Ñ„Ñ€Ğ¾Ğ²ĞºĞ¸) Ğ½ĞµÑ‚ĞµÑ€Ğ¼Ğ¸Ğ½Ğ°Ğ»ÑŒĞ½Ğ¾Ğ³Ğ¾ ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ°}
-    kind_toc:t_toc; {Ñ‚Ğ¸Ğ¿ ÑƒĞ·Ğ»Ğ°: empty, terminal, non_terminal, meta, head}
-    kind_sym:t_sym; {Ñ‚Ğ¸Ğ¿ ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ğ°: nul, oper, num, ident}
-    s_name:string;
-  end;
-
-  t_token_table=array[1..max_symbols] of t_token;
+uses token_utils;
 
 function symbols_from_file(f: string;var token_table:t_token_table):integer;
 
@@ -150,6 +105,7 @@ begin {getsym}
     if (ch='^')and(ch2='^') then begin id.s_name:='^^'; getch(f,ch,ch2); end;
     if (ch='''')and(ch2='''') then begin id.s_name:=''''''; getch(f,ch,ch2); end;
     if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
+    if (ch='[')and(ch2=']') then begin id.s_name:='[]'; getch(f,ch,ch2); end;
 
     if (ch=':')and(ch2=')') then begin id.s_name:=':)'; getch(f,ch,ch2); end;
     if (ch=':')and(ch2='(') then begin id.s_name:=':('; getch(f,ch,ch2); end;
@@ -172,7 +128,7 @@ end {getsym};
 function symbols_from_file(f: string;var token_table:t_token_table):integer;
 var ff:t_charfile; sym:t_token; symbols_num:integer;
 begin
-  start_of_file:=true; end_of_file:=false;
+  start_of_file:=true; end_of_file:=false; ch:=' '; ch2:=' ';
   symbols_num:=0; 
   assign(ff,f);
   reset(ff);

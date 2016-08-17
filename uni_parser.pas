@@ -14,94 +14,113 @@
 
 {проверка синтаксиса программы языка на основе форм Бэкуса-Наура}
 program uni_parser(input, output);
-uses sym_scanner, rbnf_scanner, rbnf_gen;
+uses token_utils, sym_scanner, rbnf_scanner, rbnf_gen;
 
-var 
-    prg_table:t_sym_table;
-    prg_symbols_num:integer;
+var
+    prg_table,token_table:t_token_table;
+    prg_symbols_num,tokens_num:integer;
     cur_sym:integer;
 
 //считывание очередного символа программы
-function getsym:t_sym;
-var sym:t_sym;
+function getsym:t_token;
+var sym:t_token;
 begin
   sym.s_name:='';
-  sym.kind:=nul;
+  sym.kind_sym:=nul;
   if cur_sym<=prg_symbols_num then
   begin
-    cur_sym:=cur_sym+1;
-    sym:=prg_table[cur_sym];
-  end else
-  begin
-    sym.s_name='OUT';
-    cur_sym:=prg_symbols_num+1;
-  end;
+    cur_sym:=skip_nul(cur_sym,prg_symbols_num,prg_table);
+    sym:=prg_table[cur_sym]
+  end else sym.s_name:='OUT';
+  cur_sym:=cur_sym+1;
+  if cur_sym>prg_symbols_num then cur_sym:=prg_symbols_num+1;
   getsym:=sym;
 end; {getsym}
 
 //разбор соответствия входного потока символов правилам языка
-function parse(goal:integer; sym:t_sym):boolean);
+function parse(goal:integer; var sym:t_token):boolean;
 var s:integer; match:boolean;
 begin
     match:=false;
-    s:=nodes_table[goal].entry;
+    s:=token_table[goal].entry;
+    writeln('-->goal="',token_table[goal].s_name,' s=',s,' token="',token_table[s].s_name,'" sym_in="',sym.s_name,'"');
     repeat
-        if (nodes_table[s].kind=terminal)and
-           (nodes_table[s].s_name=sym.s_name) then match:=true;
-        if (nodes_table[s].kind=non_terminal) then
-           match:=parse(nodes_table[s].entry,getsym);
-        if match then s:=nodes_table[s].suc else s:=nodes_table[s].alt;
+        if (token_table[s].kind_toc=terminal)and
+           (token_table[s].s_name=sym.s_name) then 
+           begin
+             writeln('term token="',token_table[s].s_name,'":',s,' OK');
+             match:=true; sym:=getsym;
+           end;
+        if (token_table[s].kind_toc=non_term) then
+           begin
+             writeln('non_term token="',token_table[s].s_name,'":',s);
+             match:=parse(token_table[s].entry,sym);
+           end;
+        if match then begin s:=token_table[s].suc; writeln('   suc=',s); end
+                 else begin s:=token_table[s].alt; writeln('   alt=',s); end;
     until s=0;
+    writeln('<--goal="',token_table[goal].s_name,' parse=',match,' sym_out="',sym.s_name,'"');
     parse:=match;
 end; {parse}
 
 //=========================================================================
 
-var i,goal:integer;
-    flag:boolean;
+var
+  i,goal:integer;
+  flag:boolean;
+  sym:t_token;
 
 begin {main}
-
   //Построение структуры языка на основе порождающих правил Бэкуса-Наура
-  sym_table_read_from_file('rbnf_rules.bnf',sym_table,symbols_num);
-  nodes_num:=symbols_num;
-  for i:=1 to nodes_num do
+  tokens_num:=symbols_from_file('rbnf_rules.bnf',token_table);
+
+  mark_tokens(tokens_num,token_table);
+  for i:=1 to tokens_num do
   begin
-    nodes_table[i].kind:=terminal;
-    nodes_table[i].suc:=0;
-    nodes_table[i].alt:=0;
-    nodes_table[i].s_name:=sym_table[i].s_name;
-    nodes_table[i].kind_sym:=sym_table[i].kind;
+    token_table[i].suc:=0;
+    token_table[i].alt:=0;
+    token_table[i].entry:=0;
   end;
-  mark_non_terminal_and_meta_nodes(nodes_num,nodes_table);
 
-  //gen_nodes_links(nodes_num,nodes_table);
-
-  for i:=1 to nodes_num do
-      writeln(i,
-              ': ',nodes_table[i].s_name,
-              '  ',nodes_table[i].kind,
-              ' ',nodes_table[i].kind_sym,
-              ', suc=',nodes_table[i].suc,
-              ', alt=',nodes_table[i].alt);
+  writeln('RBNF tokens: ',tokens_num);
+  for i:=1 to tokens_num do
+      writeln(i:3,
+              ': ',token_table[i].kind_sym:5,
+              '  ',token_table[i].kind_toc:8,
+              ' "',token_table[i].s_name,'"');
   writeln('===============================');
 
-  //проверка все ли нетерминальные символы определены
-  flag:=false;
-  for i:=1 to nodes_num do
-  if (nodes_table[i].kind=non_terminal) and (nodes_table[i].entry=0) then
-  begin
-    writeln('UNDEFINED SYMBOL: ',nodes_table[i].s_name);
-    flag:=true;
-  end;
-  if flag then halt(-1);
+  gen_tokens_links(tokens_num,token_table);
+
+  writeln('RBNF links');
+  for i:=1 to tokens_num do
+      writeln(i:3,
+              ': entry=',token_table[i].entry:3,
+              ', suc=',token_table[i].suc:3,
+              ', alt=',token_table[i].alt:3,
+              ' ',token_table[i].kind_sym:5,
+              ' ',token_table[i].kind_toc:8,
+              ' "',token_table[i].s_name,'"');
+  writeln('===============================');
 
   //загрузка транслируемой программы
-  sym_table_read_from_file('test_program.xxx',prg_table,prg_symbols_num);
+  prg_symbols_num:=symbols_from_file('test_program.xxx',prg_table);
+
+  writeln('tokens of test program: ',prg_symbols_num);
+  for i:=1 to prg_symbols_num do
+      writeln(i,
+              ': ',prg_table[i].kind_sym:5,
+              ' "',prg_table[i].s_name,'"');
+  writeln('===============================');
 
   //проверка синтаксиса программы (точка входа - первое правило РБНФ)
-  flag:=true;
-  goal:=1; while nodes_table[goal].kind<>head do goal:=goal+1;
-  flag:=parse(goal,getsym);
+  goal:=1; while token_table[goal].kind_toc<>head do goal:=goal+1;
+  writeln('goal: ',token_table[goal].s_name,', address=',goal);
+{
+  flag:=true; cur_sym:=1;
+//  repeat sym:=getsym; writeln(sym.s_name) ;until sym.s_name='OUT';
+  sym:=getsym;
+  flag:=parse(goal,sym);
   if flag then writeln('CORRECT') else writeln('INCORRECT');
+}
 end.
