@@ -107,6 +107,7 @@ begin {getsym}
     if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
     if (ch='[')and(ch2=']') then begin id.s_name:='[]'; getch(f,ch,ch2); end;
 
+    if (ch='\')and(ch2='.') then begin id.s_name:='.'; getch(f,ch,ch2); end;
     if (ch='\')and(ch2=',') then begin id.s_name:=','; getch(f,ch,ch2); end;
     if (ch='\')and(ch2='[') then begin id.s_name:='['; getch(f,ch,ch2); end;
     if (ch='\')and(ch2=']') then begin id.s_name:=']'; getch(f,ch,ch2); end;

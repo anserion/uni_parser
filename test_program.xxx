@@ -1,2 +1,7 @@
-((x))
+const n=7 m=8;
+var x y z;
+begin
+  if x >= y+3 then x := m;
+  y := z+5;
+end;
 end_of_file

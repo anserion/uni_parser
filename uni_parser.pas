@@ -19,58 +19,50 @@ uses token_utils, sym_scanner, rbnf_scanner, rbnf_gen;
 var
     prg_table,token_table:t_token_table;
     prg_symbols_num,tokens_num:integer;
-    cur_sym:integer;
-
-//считывание очередного символа программы
-function getsym:t_token;
-var sym:t_token;
-begin
-  sym.s_name:='';
-  sym.kind_sym:=nul;
-  if cur_sym<=prg_symbols_num then
-  begin
-    cur_sym:=skip_nul(cur_sym,prg_symbols_num,prg_table);
-    sym:=prg_table[cur_sym]
-  end else sym.s_name:='OUT';
-  cur_sym:=cur_sym+1;
-  if cur_sym>prg_symbols_num then cur_sym:=prg_symbols_num+1;
-  getsym:=sym;
-end; {getsym}
 
 //разбор соответствия входного потока символов правилам языка
-function parse(goal:integer; var sym:t_token):boolean;
-var s:integer; match:boolean; flag:boolean;
+function parse(goal:integer; var cur_sym:integer):boolean;
+var s:integer; match:boolean;
 begin
-    match:=false;
-    s:=token_table[goal].entry;
-    repeat
-        flag:=false;
-        if (token_table[s].kind_toc=terminal) then
-        begin
-           if (token_table[s].s_name=sym.s_name) then
-           begin
-             match:=true; sym:=getsym;
-           end else
-           begin
-             match:=token_table[s].alt=-1;
-             flag:=match;
-           end;
-        end;
-        if (token_table[s].kind_toc=non_term) then
-           begin
-             match:=parse(token_table[s].entry,sym);
-           end;
-        if match then s:=token_table[s].suc else s:=token_table[s].alt;
-    until (s=0) or flag;
-    parse:=match;
+//  writeln('-->');
+  match:=false;
+  s:=token_table[goal].entry;
+  repeat
+//    writeln('  *:',s,
+//            ' ',token_table[s].kind_toc,
+//            ' ',token_table[s].kind_sym,
+//            ' "',token_table[s].s_name,
+//            '", test sym="',prg_table[cur_sym].s_name,'":',cur_sym);
+    if (token_table[s].kind_toc=terminal) then
+    begin
+      if (token_table[s].s_name=prg_table[cur_sym].s_name) then
+      begin
+        match:=true; writeln('"',prg_table[cur_sym].s_name,'" OK');
+        cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
+      end else match:=(token_table[s].alt=-1);
+    end;
+//    writeln('  match=',match);
+    if (token_table[s].kind_toc=non_term) then
+       match:=parse(token_table[s].entry,cur_sym);
+    if match then
+    begin
+      s:=token_table[s].suc;
+//      writeln('  suc=',s);
+    end else
+    begin
+      s:=token_table[s].alt;
+//      writeln('  alt=',s);
+    end;
+  until (s<=0)or(cur_sym>prg_symbols_num);
+  parse:=match;
+//  writeln('<--');
 end; {parse}
 
 //=========================================================================
 
 var
-  i,goal:integer;
+  i,goal,start_address:integer;
   flag:boolean;
-  sym:t_token;
 
 begin {main}
   //Построение структуры языка на основе порождающих правил Бэкуса-Наура
@@ -115,13 +107,13 @@ begin {main}
               ' "',prg_table[i].s_name,'"');
   writeln('===============================');
 
-  //проверка синтаксиса программы (точка входа - первое правило РБНФ)
+  //поиск точки входа: первое правило РБНФ
   goal:=1; while token_table[goal].kind_toc<>head do goal:=goal+1;
   writeln('goal: ',token_table[goal].s_name,', address=',goal);
 
-  flag:=true; cur_sym:=1;
-  sym:=getsym;
-  flag:=parse(goal,sym);
+  //проверка синтаксиса программы
+  start_address:=1;
+  flag:=parse(goal,start_address);
   if flag then writeln('CORRECT') else writeln('INCORRECT');
 
 end.
