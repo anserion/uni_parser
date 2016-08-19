@@ -22,100 +22,57 @@ var
 
 //разбор соответствия входного потока символов правилам языка
 procedure parse(goal:integer; var cur_sym:integer; var match:boolean);
-var s:integer; exclude,parse_flag,alternate_flag,empty_flag:boolean;
-    exclude_off_flag:boolean;
+var s:integer; exclude,exclude_off_flag:boolean;
 begin
-  writeln('"',token_table[goal].s_name,'"-->',goal);
+  writeln(token_table[goal].s_name,':',goal);
   exclude:=false;
   s:=token_table[goal].entry;
   repeat
-    writeln('"',token_table[goal].s_name,'":',s,
-            ' ',token_table[s].kind_toc,
-            ' ',token_table[s].kind_sym,
-            ' "',token_table[s].s_name,
-            '", test sym="',prg_table[cur_sym].s_name,'":',cur_sym);
-
-    parse_flag:=false;
-    alternate_flag:=false;
-    empty_flag:=false;
     exclude_off_flag:=false;
     if token_table[s].s_name='EXCLUDE_ON' then
     begin
       exclude:=true; s:=token_table[s].suc;
-      writeln('  EXCLUDE_ON, s=',s);
+      writeln('  EXCLUDE_ON:',s);
     end;
 
     if token_table[s].s_name='EXCLUDE_OFF' then
     begin
       exclude:=false; s:=token_table[s].suc;
+      cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
       exclude_off_flag:=true;
-      writeln('  EXCLUDE_OFF, s=',s);
+      writeln('  EXCLUDE_OFF:',s);
     end;
 
-    if s<>0 then
+    if (s>0)and(cur_sym<=prg_symbols_num) then
     begin
       if (token_table[s].kind_toc=terminal) then
       begin
-        if token_table[s].s_name='ANY' then
+        write(token_table[goal].s_name,':',s,' "',token_table[s].s_name,'"<-->"',prg_table[cur_sym].s_name,'":',cur_sym);
+        if exclude then match:=(token_table[s].s_name<>prg_table[cur_sym].s_name)
+        else
         begin
-          match:=not(exclude);
-          writeln('  ANY "',prg_table[cur_sym].s_name,'" ',match,': ',s);
-        end else
-        if token_table[s].s_name='ONE_ANY_CHAR' then
-        begin
-          if length(prg_table[cur_sym].s_name)=1 then
+          if (token_table[s].s_name='ANY')or
+             ((token_table[s].s_name='ONE_ANY_CHAR')and(length(prg_table[cur_sym].s_name)=1))or
+             (token_table[s].s_name='EMPTY')or
+             (token_table[s].s_name=prg_table[cur_sym].s_name) then
           begin
-            match:=not(exclude);
-            writeln('  ONE_ANY_CHAR "',prg_table[cur_sym].s_name,'" ',match,': ',s);
-          end;
-        end else
-        if token_table[s].s_name='EMPTY' then
-        begin
-          match:=not(exclude); empty_flag:=true;
-          if match then writeln('  EMPTY ',match,': ',s);
-        end else
-        if (token_table[s].s_name=prg_table[cur_sym].s_name) then
-        begin
-          match:=not(exclude);
-          writeln('  "',prg_table[cur_sym].s_name,'" ',match,': ',s);
-        end else
-        if exclude and (token_table[s].s_name<>prg_table[cur_sym].s_name) then
-        begin
-          match:=true;
-          writeln('  "',prg_table[cur_sym].s_name,'" ',match,': ',s);
-        end else
-        begin
-          alternate_flag:=true;
-          match:=(token_table[s].alt=-1);
-          //if exclude then match:=not(match);
-          writeln('  Alternate exit=',match);
+            match:=true;
+            if token_table[s].s_name<>'EMPTY' then
+               cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
+          end else match:=(token_table[s].alt=-1);
         end;
+        writeln(' ',match);
       end else
       begin
-        parse_flag:=true;
         parse(token_table[s].entry,cur_sym,match);
         if exclude then match:=not(match);
-        writeln('  back addr=',s,' <--',match);
+        writeln(token_table[goal].s_name,':',token_table[s].s_name,':',s,' <--',match);
       end;
-
-      if not(empty_flag or alternate_flag or parse_flag or (s<=0)) then
-         cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
-
-      if match then
-      begin
-        s:=token_table[s].suc;
-        writeln('  suc=',s);
-      end else
-      begin
-        s:=token_table[s].alt;
-        writeln('  alt=',s);
-      end;
-
-    end; {if s<>0}
-  until s<=0;
-//  if s=-1 then match:=not(exclude);
-  if exclude_off_flag then cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
-  writeln('"',token_table[goal].s_name,'"<--',match);
+      if match then s:=token_table[s].suc else s:=token_table[s].alt;
+    end;
+  until (s<=0)or(cur_sym>prg_symbols_num);
+  if s=-1 then match:=not(exclude);
+  writeln(token_table[goal].s_name,'<--',match);
 end; {parse}
 
 //=========================================================================
@@ -174,6 +131,5 @@ begin {main}
   //проверка синтаксиса программы
   address:=1; match:=true;
   parse(goal,address,match);
-  writeln('"',prg_table[address].s_name,'"');
   if match then writeln('CORRECT') else writeln('INCORRECT');
 end.
