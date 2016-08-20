@@ -22,12 +22,13 @@ var
 
 //разбор соответствия входного потока символов правилам языка
 procedure parse(level,goal:integer; var cur_sym:integer; var match:boolean);
-var s:integer; exclude:boolean;
+var s:integer; exclude,alter_exit:boolean;
 begin
   exclude:=false;
   s:=token_table[goal].entry;
-  writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,' entry:',s);
+  writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,' entry ',s);
   repeat
+    alter_exit:=false;
     if token_table[s].s_name='EXCLUDE_ON' then
     begin
       writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,
@@ -49,7 +50,7 @@ begin
       begin
         write('LEVEL_',level,':',token_table[goal].s_name,':',goal,
               ' ',s,':"',token_table[s].s_name,'":',token_table[s].suc,':',token_table[s].alt);
-        if token_table[s].s_name<>'EMPTY' then write('<-->"',prg_table[cur_sym].s_name,'":',cur_sym);
+        if token_table[s].s_name<>'EMPTY' then write(' = "',prg_table[cur_sym].s_name,'":',cur_sym);
         if exclude then match:=(token_table[s].s_name<>prg_table[cur_sym].s_name)
         else
         begin
@@ -61,20 +62,24 @@ begin
             match:=true;
             if token_table[s].s_name<>'EMPTY' then
                cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
-          end else match:=(token_table[s].alt=-1);
+          end else
+          if token_table[s].alt=-1 then
+          begin
+            match:=true; alter_exit:=true;
+          end else match:=false;
         end;
-        writeln(' ',match);
+        if not(alter_exit) then writeln(' ',match) else writeln(' ALTER_EXIT');
       end else
       begin
         writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,
-                ' ',s,':"',token_table[token_table[s].entry].s_name,'":',token_table[s].entry,' NON_TERMINAL');
+                ' ',s,':"',token_table[token_table[s].entry].s_name,'"-->',token_table[s].entry,' NON_TERMINAL');
         parse(level+1,token_table[s].entry,cur_sym,match);
         if exclude then match:=not(match);
       end;
       if match then s:=token_table[s].suc else s:=token_table[s].alt;
       if s=-1 then s:=0;
     end;
-  until (s=0)or(cur_sym>prg_symbols_num);
+  until (s=0)or(alter_exit)or(cur_sym>prg_symbols_num);
   writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,' ',match);
 end; {parse}
 
