@@ -49,6 +49,18 @@ begin {getsym}
   id.s_name:='';
   id.kind_sym:=nul;
 
+  if ch='"' then
+  begin
+    id.kind_sym:=ident;
+    id.s_name:='';
+    repeat
+      id.s_name:=id.s_name+ch;
+      getch(f,ch,ch2);
+    until (ch='"')or end_of_file;
+    id.s_name:=id.s_name+'"';
+    if not(end_of_file) then getch(f,ch,ch2);
+  end
+    else
   if (ch in ['_']+eng_letters+rus_cp1251_letters) then
   begin
     id.kind_sym:=ident;
@@ -104,7 +116,7 @@ begin {getsym}
     if (ch='&')and(ch2='&') then begin id.s_name:='&&'; getch(f,ch,ch2); end;
     if (ch='^')and(ch2='^') then begin id.s_name:='^^'; getch(f,ch,ch2); end;
     if (ch='''')and(ch2='''') then begin id.s_name:=''''''; getch(f,ch,ch2); end;
-    if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
+//    if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
 //    if (ch='[')and(ch2=']') then begin id.s_name:='[]'; getch(f,ch,ch2); end;
 
     if (ch='\')and(ch2='.') then begin id.s_name:='.'; getch(f,ch,ch2); end;
@@ -113,9 +125,6 @@ begin {getsym}
     if (ch='\')and(ch2=']') then begin id.s_name:=']'; getch(f,ch,ch2); end;
     if (ch='\')and(ch2=' ') then begin id.s_name:=' '; getch(f,ch,ch2); end;
     if (ch='\')and(ch2='\') then begin id.s_name:='\'; getch(f,ch,ch2); end;
-
-//    if (ch=':')and(ch2=')') then begin id.s_name:=':)'; getch(f,ch,ch2); end;
-//    if (ch=':')and(ch2='(') then begin id.s_name:=':('; getch(f,ch,ch2); end;
 
     if not(end_of_file) then getch(f,ch,ch2);
   end

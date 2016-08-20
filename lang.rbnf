@@ -1,6 +1,6 @@
-prog = block .
+prog = block.
 
-number= digit.
+number= ANY.
 number1= [-] digit [digit].
 digit= 0,1,2,3,4,5,6,7,8,9.
 
@@ -23,7 +23,7 @@ block = [const name=number [ \, name=number] ; ]
         [procedure name ; block ; ]
         operator.
 
-operator = call name ;,
+operator = call name,
            begin operator [; operator] end,
            if condition then operator,
            while condition do operator,

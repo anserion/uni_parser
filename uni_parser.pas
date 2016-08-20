@@ -21,10 +21,10 @@ var
     prg_symbols_num,tokens_num:integer;
 
 //разбор соответствия входного потока символов правилам языка
-procedure parse(goal:integer; var cur_sym:integer; var match:boolean);
+procedure parse(level,goal:integer; var cur_sym:integer; var match:boolean);
 var s:integer; exclude,exclude_off_flag:boolean;
 begin
-  writeln(token_table[goal].s_name,':',goal);
+  writeln(level,':',token_table[goal].s_name,':',goal);
   exclude:=false;
   s:=token_table[goal].entry;
   repeat
@@ -64,7 +64,7 @@ begin
         writeln(' ',match);
       end else
       begin
-        parse(token_table[s].entry,cur_sym,match);
+        parse(level+1,token_table[s].entry,cur_sym,match);
         if exclude then match:=not(match);
         writeln(token_table[goal].s_name,':',token_table[s].s_name,':',s,' <--',match);
       end;
@@ -72,7 +72,7 @@ begin
     end;
   until (s<=0)or(cur_sym>prg_symbols_num);
   if s=-1 then match:=not(exclude);
-  writeln(token_table[goal].s_name,'<--',match);
+  writeln(level,':',token_table[goal].s_name,'<--',match);
 end; {parse}
 
 //=========================================================================
@@ -130,6 +130,6 @@ begin {main}
 
   //проверка синтаксиса программы
   address:=1; match:=true;
-  parse(goal,address,match);
+  parse(1,goal,address,match);
   if match then writeln('CORRECT') else writeln('INCORRECT');
 end.
