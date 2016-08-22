@@ -104,6 +104,16 @@ begin
          if token_table[k].s_name=s then token_table[k].kind_toc:=non_term;
        token_table[i].kind_toc:=head;
     end;
+
+  for i:=1 to tokens_num do
+    if token_table[i].kind_toc=terminal then
+    begin
+      if token_table[i].s_name='\.' then token_table[i].s_name:='.';
+      if token_table[i].s_name='\,' then token_table[i].s_name:=',';
+      if token_table[i].s_name='\[' then token_table[i].s_name:='[';
+      if token_table[i].s_name='\]' then token_table[i].s_name:=']';
+      if token_table[i].s_name='\=' then token_table[i].s_name:='=';
+    end;
 end; {mark_tokens}
 
 begin
