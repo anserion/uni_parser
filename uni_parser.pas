@@ -77,9 +77,10 @@ begin
         if exclude then match:=not(match);
       end;
       if match then s:=token_table[s].suc else s:=token_table[s].alt;
-      if s=-1 then s:=0;
+      if alter_exit then s:=0;
+//      if s<0 then s:=0;
     end;
-  until (s=0)or(alter_exit)or(cur_sym>prg_symbols_num);
+  until (s<=0)or(alter_exit)or(cur_sym>prg_symbols_num);
   writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,' ',match);
 end; {parse}
 

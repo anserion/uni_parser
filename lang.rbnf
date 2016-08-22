@@ -18,17 +18,17 @@ mul_div = *, / .
 reserved_words= const,var,procedure,call,
                 begin,end,if,then,while,do.
 
-block = [const name=number [ \, name=number] ; ]
-        [var name [ \, name] ; ]
+block = [const name=number [ , name=number] ; ]
+        [var name [ , name] ; ]
         [procedure name ; block ; ]
         operator.
 
-operator = call name,
-           begin operator [; operator] end,
+operator = EMPTY,
+           call name;,
+           begin operator end;,
            if condition then operator,
            while condition do operator,
-           name := expression,
-           EMPTY.
+           name := expression;.
 
 condition = odd expression,
             expression cond_oper expression.

@@ -61,6 +61,23 @@ begin {getsym}
     if not(end_of_file) then getch(f,ch,ch2);
   end
     else
+  if ch=':' then
+  begin
+    id.kind_sym:=oper;
+    id.s_name:=':';
+    if ch2=':' then
+    begin
+      id.s_name:='::';
+      if not(end_of_file) then getch(f,ch,ch2);
+      if ch2='=' then
+      begin
+        id.s_name:='::=';
+        if not(end_of_file) then getch(f,ch,ch2);
+      end;
+    end;
+    if not(end_of_file) then getch(f,ch,ch2);
+  end
+    else
   if (ch in ['_']+eng_letters+rus_cp1251_letters) then
   begin
     id.kind_sym:=ident;
@@ -110,7 +127,7 @@ begin {getsym}
     if (ch='-')and(ch2='-') then begin id.s_name:='--'; getch(f,ch,ch2); end;
     if (ch='*')and(ch2='*') then begin id.s_name:='**'; getch(f,ch,ch2); end;
     if (ch='.')and(ch2='.') then begin id.s_name:='..'; getch(f,ch,ch2); end;
-    if (ch=':')and(ch2=':') then begin id.s_name:='::'; getch(f,ch,ch2); end;
+//    if (ch=':')and(ch2=':') then begin id.s_name:='::'; getch(f,ch,ch2); end;
     if (ch='/')and(ch2='/') then begin id.s_name:='//'; getch(f,ch,ch2); end;
     if (ch='|')and(ch2='|') then begin id.s_name:='||'; getch(f,ch,ch2); end;
     if (ch='&')and(ch2='&') then begin id.s_name:='&&'; getch(f,ch,ch2); end;
