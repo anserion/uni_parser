@@ -30,15 +30,17 @@ begin
    halt(-1);
 end; {error}
 
-// factor ::= <symbol> | [<term>]
+// factor ::= <symbol> | [<term>] | [<term>!]
 function factor(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
   if token_table[k].s_name='[' then
   begin
     token_table[k].kind_toc:=meta;
     k:=skip_nul(k+1,tokens_num,token_table);
-    if token_table[k].s_name<>']' then k:=term(k,tokens_num,token_table);
-    if token_table[k].s_name=']' then
+    if (token_table[k].s_name<>']')and
+       (token_table[k].s_name<>'!]') then k:=term(k,tokens_num,token_table);
+    if (token_table[k].s_name=']')or
+       (token_table[k].s_name='!]')then
     begin
       token_table[k].kind_toc:=meta;
       k:=skip_nul(k+1,tokens_num,token_table);
@@ -54,6 +56,7 @@ begin
      k:=factor(k,tokens_num,token_table);
    until (token_table[k].s_name='.')or
          (token_table[k].s_name=',')or
+         (token_table[k].s_name='!]')or
          (token_table[k].s_name=']');
    term:=k;
 end {term};

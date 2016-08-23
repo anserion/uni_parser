@@ -1,6 +1,6 @@
-bbbbb= xxxx \. .
+bbbb= [aaa!].
 
-prog = block.
+prog = block \. .
 
 number= ANY.
 number1= [-] digit [digit].
