@@ -1,3 +1,5 @@
+// PL0 syntax file
+
 bbbb= xxxx [aaa bbb !] yyyyy.
 
 prog = block \. .

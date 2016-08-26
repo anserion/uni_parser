@@ -84,16 +84,27 @@ begin
   k:=skip_nul(1,tokens_num,token_table);
   while k<tokens_num do
   begin
-    if token_table[k].kind_sym=ident then
+    if (token_table[k].s_name='//')or
+       (token_table[k].s_name='#') then
     begin
-      token_table[k].kind_toc:=head;
+      repeat
+        k:=k+1;
+      until (token_table[k].s_name='LF')or(k>=tokens_num);
       k:=skip_nul(k+1,tokens_num,token_table);
-    end else error;
-    if token_table[k].s_name='=' then token_table[k].kind_toc:=meta else error;
-    k:=expression(k,tokens_num,token_table);
-    if token_table[k].s_name<>'.' then error;
-    token_table[k].kind_toc:=meta;
-    k:=skip_nul(k+1,tokens_num,token_table);
+    end;
+    if k<tokens_num then
+    begin
+      if token_table[k].kind_sym=ident then
+      begin
+        token_table[k].kind_toc:=head;
+        k:=skip_nul(k+1,tokens_num,token_table);
+      end else error;
+      if token_table[k].s_name='=' then token_table[k].kind_toc:=meta else error;
+      k:=expression(k,tokens_num,token_table);
+      if token_table[k].s_name<>'.' then error;
+      token_table[k].kind_toc:=meta;
+      k:=skip_nul(k+1,tokens_num,token_table);
+    end;
   end;
 
   for i:=1 to tokens_num do
