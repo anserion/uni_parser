@@ -44,8 +44,6 @@ end {getch};
 function getsym(var f:t_charfile):t_token;
 var id: t_token;
 begin {getsym}
-  while (ch=chr(10))or(ch=chr(13)) do getch(f,ch,ch2);
-
   id.s_name:='';
   id.kind_sym:=nul;
 
@@ -157,6 +155,38 @@ begin {getsym}
   begin
     id.s_name:=ch;
     id.kind_sym:=nul;
+    if ch=chr(01) then id.s_name:='SOH';
+    if ch=chr(02) then id.s_name:='STX';
+    if ch=chr(03) then id.s_name:='ETX';
+    if ch=chr(04) then id.s_name:='EOT';
+    if ch=chr(05) then id.s_name:='ENQ';
+    if ch=chr(06) then id.s_name:='ACK';
+    if ch=chr(07) then id.s_name:='BEL';
+    if ch=chr(08) then id.s_name:='BS';
+    if ch=chr(09) then id.s_name:='TAB';
+    if ch=chr(10) then id.s_name:='LF';
+    if ch=chr(11) then id.s_name:='VT';
+    if ch=chr(12) then id.s_name:='FF';
+    if ch=chr(13) then id.s_name:='CR';
+    if ch=chr(14) then id.s_name:='SO';
+    if ch=chr(15) then id.s_name:='SI';
+    if ch=chr(16) then id.s_name:='DLE';
+    if ch=chr(17) then id.s_name:='DC1';
+    if ch=chr(18) then id.s_name:='DC2';
+    if ch=chr(19) then id.s_name:='DC3';
+    if ch=chr(20) then id.s_name:='DC4';
+    if ch=chr(21) then id.s_name:='NAK';
+    if ch=chr(22) then id.s_name:='SYN';
+    if ch=chr(23) then id.s_name:='ETB';
+    if ch=chr(24) then id.s_name:='CAN';
+    if ch=chr(25) then id.s_name:='EM';
+    if ch=chr(26) then id.s_name:='SUB';
+    if ch=chr(27) then id.s_name:='ESC';
+    if ch=chr(28) then id.s_name:='FS';
+    if ch=chr(29) then id.s_name:='GS';
+    if ch=chr(30) then id.s_name:='RS';
+    if ch=chr(31) then id.s_name:='US';
+    if ch=chr(32) then id.s_name:='SPACE';
     if not(end_of_file) then getch(f,ch,ch2);
   end;
 //  writeln('symbol: ',id.s_name);
