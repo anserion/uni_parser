@@ -42,11 +42,29 @@ begin
 end {getch};
 
 function getsym(var f:t_charfile):t_token;
-var id: t_token;
+var id: t_token; tmp,tmp2:integer;
 begin {getsym}
   id.s_name:='';
   id.kind_sym:=nul;
 
+  if (ch='#')and(ch2 in digits+['A','B','C','D','E','F']) then
+  begin
+    writeln('16-special');
+    getch(f,ch,ch2);
+    tmp:=ord(ch)-ord('0');
+    if ch in ['A','B','C','D','E','F'] then tmp:=ord(ch)-ord('A')+10;
+    tmp2:=-1;
+    if (ch2 in digits+['A','B','C','D','E','F']) then
+    begin
+      tmp2:=ord(ch2)-ord('0');
+      if ch2 in ['A','B','C','D','E','F'] then tmp2:=ord(ch2)-ord('A')+10;
+      if not(end_of_file) then getch(f,ch,ch2);
+    end;
+    if tmp2<0 then id.s_name:=chr(tmp) else id.s_name:=chr(tmp*16+tmp2);
+    writeln(tmp,' ',tmp2,' ',id.s_name);
+    if not(end_of_file) then getch(f,ch,ch2);
+  end
+    else
   if ch='"' then
   begin
     id.kind_sym:=ident;

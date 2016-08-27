@@ -41,5 +41,4 @@ expression = plus_minus_empty term [plus_minus term].
 
 term = factor [mul_div factor].
 factor = name, number, ( expression ).
-
 end_of_file
