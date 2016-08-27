@@ -140,13 +140,7 @@ begin {getsym}
 //    if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
 //    if (ch='[')and(ch2=']') then begin id.s_name:='[]'; getch(f,ch,ch2); end;
 
-    if (ch='\')and(ch2='.') then begin id.s_name:='\.'; getch(f,ch,ch2); end;
-    if (ch='\')and(ch2=',') then begin id.s_name:='\,'; getch(f,ch,ch2); end;
-    if (ch='\')and(ch2='[') then begin id.s_name:='\['; getch(f,ch,ch2); end;
-    if (ch='\')and(ch2=']') then begin id.s_name:='\]'; getch(f,ch,ch2); end;
-    if (ch='\')and(ch2='=') then begin id.s_name:='\='; getch(f,ch,ch2); end;
-
-    if (ch='\')and(ch2=' ') then begin id.s_name:=' '; getch(f,ch,ch2); end;
+    if ch='\' then begin id.s_name:='\'+ch2; getch(f,ch,ch2); end;
     if (ch='\')and(ch2='\') then begin id.s_name:='\'; getch(f,ch,ch2); end;
 
     if not(end_of_file) then getch(f,ch,ch2);
