@@ -22,14 +22,14 @@ function symbols_from_file(f: string;var token_table:t_token_table):integer;
 implementation
 
 var ch,ch2: char;
-    start_of_file, end_of_file:boolean;
+    start_of_file, end_of_file, real_end_of_file:boolean;
 
 procedure getch(var f:t_charfile; var ch,ch2:char);
 begin
   if end_of_file then begin write('UNEXPECTED END OF FILE'); halt(-1); end;
   if eof(f) then end_of_file:=true;
   if start_of_file then begin ch:=' '; ch2:=' '; end;
-  if end_of_file then begin ch:=ch2; ch2:=' '; end;
+  if end_of_file then begin ch:=ch2; ch2:=' '; real_end_of_file:=true; end;
 
   if not(end_of_file) and not(start_of_file) then
   begin ch:=ch2; read(f,ch2); end;
@@ -140,7 +140,6 @@ begin {getsym}
     if (ch='!')and(ch2='=') then begin id.s_name:='!='; getch(f,ch,ch2); end;
     if (ch='!')and(ch2=']') then begin id.s_name:='!]'; getch(f,ch,ch2); end;
     if (ch='=')and(ch2='=') then begin id.s_name:='=='; getch(f,ch,ch2); end;
-//    if (ch=':')and(ch2='=') then begin id.s_name:=':='; getch(f,ch,ch2); end;
     if (ch='<')and(ch2='=') then begin id.s_name:='<='; getch(f,ch,ch2); end;
     if (ch='>')and(ch2='=') then begin id.s_name:='>='; getch(f,ch,ch2); end;
     if (ch='(')and(ch2='*') then begin id.s_name:='(*'; getch(f,ch,ch2); end;
@@ -149,12 +148,13 @@ begin {getsym}
     if (ch='-')and(ch2='-') then begin id.s_name:='--'; getch(f,ch,ch2); end;
     if (ch='*')and(ch2='*') then begin id.s_name:='**'; getch(f,ch,ch2); end;
     if (ch='.')and(ch2='.') then begin id.s_name:='..'; getch(f,ch,ch2); end;
-//    if (ch=':')and(ch2=':') then begin id.s_name:='::'; getch(f,ch,ch2); end;
     if (ch='/')and(ch2='/') then begin id.s_name:='//'; getch(f,ch,ch2); end;
     if (ch='|')and(ch2='|') then begin id.s_name:='||'; getch(f,ch,ch2); end;
     if (ch='&')and(ch2='&') then begin id.s_name:='&&'; getch(f,ch,ch2); end;
     if (ch='^')and(ch2='^') then begin id.s_name:='^^'; getch(f,ch,ch2); end;
     if (ch='''')and(ch2='''') then begin id.s_name:=''''''; getch(f,ch,ch2); end;
+//    if (ch=':')and(ch2=':') then begin id.s_name:='::'; getch(f,ch,ch2); end;
+//    if (ch=':')and(ch2='=') then begin id.s_name:=':='; getch(f,ch,ch2); end;
 //    if (ch='"')and(ch2='"') then begin id.s_name:='""'; getch(f,ch,ch2); end;
 //    if (ch='[')and(ch2=']') then begin id.s_name:='[]'; getch(f,ch,ch2); end;
 
@@ -209,14 +209,16 @@ end {getsym};
 function symbols_from_file(f: string;var token_table:t_token_table):integer;
 var ff:t_charfile; sym:t_token; symbols_num:integer;
 begin
-  start_of_file:=true; end_of_file:=false; ch:=' '; ch2:=' ';
-  symbols_num:=0; 
+  start_of_file:=true; end_of_file:=false; real_end_of_file:=false;
+  ch:=' '; ch2:=' ';
+  symbols_num:=0;
   assign(ff,f);
   reset(ff);
   getch(ff,ch,ch2); sym:=getsym(ff);
 
   while (sym.s_name<>'end_of_file') do
   begin
+//    writeln(sym.s_name);
     symbols_num:=symbols_num+1;
     token_table[symbols_num]:=sym;
     sym:=getsym(ff);
@@ -227,4 +229,3 @@ end;
 
 begin
 end.
-

@@ -66,7 +66,9 @@ function skip_nul(k,tokens_num:integer;var token_table:t_token_table):integer;
 function find_prev_good_token(k,tokens_num:integer;var token_table:t_token_table):integer;
 function find_next_good_token(k,tokens_num:integer;var token_table:t_token_table):integer;
 function find_start_of_expression(s:string;tokens_num:integer;var token_table:t_token_table):integer;
-function find_end_of_expression(k,tokens_num:integer;var token_table:t_token_table):integer;
+procedure find_ends_of_expression(k,tokens_num:integer;
+                              var token_table:t_token_table;
+                              var start_address,end_address:integer);
 
 
 implementation
@@ -106,20 +108,40 @@ begin
   find_start_of_expression:=start_address;
 end; {find_start_of_expression}
 
-function find_end_of_expression(k,tokens_num:integer;
-                              var token_table:t_token_table):integer;
+procedure find_ends_of_expression(k,tokens_num:integer;
+                              var token_table:t_token_table;
+                              var start_address,end_address:integer);
 var flag:boolean;
 begin
   if k>0 then
   begin
-    repeat k:=k+1; until (token_table[k].kind_toc=head)or(k=tokens_num);
+    start_address:=k;
     flag:=false;
     repeat
-      if k=0 then flag:=true;
-      if (k>0) then if token_table[k].s_name='.' then flag:=true else k:=k-1;
+      if start_address=0 then flag:=true;
+      if (token_table[start_address].kind_toc=head) then flag:=true
+                                                    else start_address:=start_address-1;
     until flag;
+
+    end_address:=k;
+    repeat
+      end_address:=end_address+1;
+    until (token_table[end_address].kind_toc=head)or
+          (end_address=tokens_num);
+
+    flag:=false;
+    repeat
+      if end_address=0 then flag:=true;
+      if (end_address>0) then
+         if (token_table[end_address].s_name='.')and
+            (token_table[end_address].kind_toc=meta) then flag:=true
+                                                     else end_address:=end_address-1;
+    until flag;
+  end else
+  begin
+    start_address:=0;
+    end_address:=0;
   end;
-  find_end_of_expression:=k;
 end; {find_end_of_expression}
 
 begin

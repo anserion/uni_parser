@@ -92,8 +92,11 @@ var
 
 begin {main}
   //Построение структуры языка на основе порождающих правил Бэкуса-Наура
+  writeln('reading lang.rbnf');
   tokens_num:=symbols_from_file('lang.rbnf',token_table);
+  writeln('OK');
 
+  writeln('check syntax and markup RBNF tokens');
   mark_tokens(tokens_num,token_table);
   for i:=1 to tokens_num do
   begin
@@ -101,16 +104,19 @@ begin {main}
     token_table[i].alt:=0;
     token_table[i].entry:=0;
   end;
+  writeln('OK');
 
-//  writeln('RBNF tokens: ',tokens_num);
-//  for i:=1 to tokens_num do
-//      writeln(i:3,
-//              ': ',token_table[i].kind_sym:5,
-//              '  ',token_table[i].kind_toc:8,
-//              ' "',token_table[i].s_name,'"');
-//  writeln('===============================');
+  writeln('RBNF tokens: ',tokens_num);
+  for i:=1 to tokens_num do
+      writeln(i:3,
+              ': ',token_table[i].kind_sym:5,
+              '  ',token_table[i].kind_toc:8,
+              ' "',token_table[i].s_name,'"');
+  writeln('===============================');
 
+  writeln('generate RBNF syntax tree');
   gen_tokens_links(tokens_num,token_table);
+  writeln('OK');
 
   writeln('RBNF links');
   for i:=1 to tokens_num do
@@ -124,7 +130,9 @@ begin {main}
   writeln('===============================');
 
   //загрузка транслируемой программы
+  writeln('reading test_program.xxx');
   prg_symbols_num:=symbols_from_file('test_program.xxx',prg_table);
+  writeln('OK');
 
   writeln('tokens of test program: ',prg_symbols_num);
   for i:=1 to prg_symbols_num do
@@ -138,6 +146,7 @@ begin {main}
   writeln('goal: ',token_table[goal].s_name,', address=',goal);
 
   //проверка синтаксиса программы
+  writeln('parse text by RBNF syntax tree');
   address:=1; match:=true;
   parse(1,goal,address,match);
   if match then writeln('CORRECT') else writeln('INCORRECT');

@@ -23,10 +23,18 @@ implementation
 
 function term(k,tokens_num:integer;var token_table:t_token_table):integer; forward;
 
-procedure error;
+procedure error(k,tokens_num:integer; s:string; var token_table:t_token_table);
+var k1:integer;
 begin
    writeln;
-   writeln('ERROR');
+   writeln('RBNF SYNTAX ERROR AT TOKEN ',k,': "',token_table[k].s_name,'"');
+   k1:=k;
+   while (k1>1)and(token_table[k1].kind_toc<>head) do k1:=k1-1;
+   for k:=k1 to k do writeln(k:3,
+                             ': ',token_table[k].kind_sym:5,
+                             '  ',token_table[k].kind_toc:8,
+                             ' "',token_table[k].s_name,'"');
+   writeln(s);
    halt(-1);
 end; {error}
 
@@ -44,7 +52,7 @@ begin
     begin
       token_table[k].kind_toc:=meta;
       k:=skip_nul(k+1,tokens_num,token_table);
-    end else error;
+    end else error(k,tokens_num,'can not find "]" or "!]"',token_table);
   end else k:=skip_nul(k+1,tokens_num,token_table);
   factor:=k;
 end {factor};
@@ -56,8 +64,10 @@ begin
      k:=factor(k,tokens_num,token_table);
    until (token_table[k].s_name='.')or
          (token_table[k].s_name=',')or
+         (token_table[k].s_name='|')or
          (token_table[k].s_name='!]')or
-         (token_table[k].s_name=']');
+         (token_table[k].s_name=']')or
+         (k>=tokens_num);
    term:=k;
 end {term};
 
@@ -65,7 +75,8 @@ end {term};
 function expression(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
    k:=term(k,tokens_num,token_table);
-   while token_table[k].s_name=',' do
+   while ((token_table[k].s_name=',')or
+         (token_table[k].s_name='|'))and(k<tokens_num) do
    begin
       token_table[k].kind_toc:=meta;
       k:=term(skip_nul(k+1,tokens_num,token_table),tokens_num,token_table);
@@ -89,7 +100,7 @@ begin
     begin
       repeat
         k:=k+1;
-      until (token_table[k].s_name='LF')or(k>=tokens_num);
+      until (token_table[k].s_name='LF')or(k=tokens_num);
       k:=skip_nul(k+1,tokens_num,token_table);
     end;
     if k<tokens_num then
@@ -98,10 +109,13 @@ begin
       begin
         token_table[k].kind_toc:=head;
         k:=skip_nul(k+1,tokens_num,token_table);
-      end else error;
-      if token_table[k].s_name='=' then token_table[k].kind_toc:=meta else error;
-      k:=expression(k,tokens_num,token_table);
-      if token_table[k].s_name<>'.' then error;
+      end else error(k,tokens_num,'can not find head ident',token_table);
+      if (token_table[k].s_name='=')or
+         (token_table[k].s_name='::=') then token_table[k].kind_toc:=meta
+                                       else error(k,tokens_num,'can not find "=" or "::="',token_table);
+      if k<tokens_num then k:=expression(k+1,tokens_num,token_table)
+                      else error(k,tokens_num,'can not find expression body',token_table);
+      if token_table[k].s_name<>'.' then error(k,tokens_num,'can not find "."',token_table);
       token_table[k].kind_toc:=meta;
       k:=skip_nul(k+1,tokens_num,token_table);
     end;
@@ -126,6 +140,7 @@ begin
       if token_table[i].s_name='\,' then token_table[i].s_name:=',';
       if token_table[i].s_name='\[' then token_table[i].s_name:='[';
       if token_table[i].s_name='\]' then token_table[i].s_name:=']';
+      if token_table[i].s_name='\|' then token_table[i].s_name:='|';
       if token_table[i].s_name='\=' then token_table[i].s_name:='=';
     end;
 end; {mark_tokens}
