@@ -1,6 +1,6 @@
-//PL0 RBNF syntax example
-exp1 = x,y,[z w] f.
-exp2 = a b c,z.
-exp2 = var,begin for.
-exp1 = u,v w.
+//test example of RBNF rules
+A= x.
+B= A C.
+C= [+A].
+A=(B).
 end_of_file

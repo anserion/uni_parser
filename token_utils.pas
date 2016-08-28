@@ -99,12 +99,16 @@ end; {find_next_good_token}
 
 function find_start_of_expression(s:string;tokens_num:integer;
                               var token_table:t_token_table):integer;
-var start_address,k:integer;
+var start_address,k:integer; flag:boolean;
 begin
-  start_address:=0;
+  start_address:=0; flag:=true;
   for k:=1 to tokens_num do
-      if (token_table[k].s_name=s)and
-         (token_table[k].kind_toc=head) then start_address:=k;
+      if flag and (token_table[k].s_name=s)and
+         (token_table[k].kind_toc=head) then
+      begin
+        flag:=false;
+        start_address:=k;
+      end;
   find_start_of_expression:=start_address;
 end; {find_start_of_expression}
 
