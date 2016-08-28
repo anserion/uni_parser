@@ -129,8 +129,8 @@ begin
     begin
        s:=token_table[i].s_name;
        for k:=1 to tokens_num do
-         if token_table[k].s_name=s then token_table[k].kind_toc:=non_term;
-       token_table[i].kind_toc:=head;
+         if (token_table[k].s_name=s)and
+            (token_table[k].kind_toc<>head) then token_table[k].kind_toc:=non_term;
     end;
 
   for i:=1 to tokens_num do

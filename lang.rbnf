@@ -1,43 +1,6 @@
 //PL0 RBNF syntax example
-
-prog = block.
-
-number= ANY.
-number1= [-] digit [digit].
-digit= 0,1,2,3,4,5,6,7,8,9.
-
-name= EXCLUDE_ON reserved_words EXCLUDE_OFF.
-name1= letter [letter].
-letter= small_letter, cap_letter.
-small_letter= a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z.
-cap_letter= A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z.
-
-cond_oper = =, <>, <, >, <=, >= .
-plus_minus = +, - .
-plus_minus_empty = +, -, EMPTY.
-mul_div = *, / .
-
-reserved_words= const,var,procedure,call,
-                begin,end,if,then,while,do.
-
-block = [const name=number [ \, name=number] ; ]
-        [var name [ \, name] ; ]
-        [procedure name ; block ; ]
-        operator.
-
-operator = call name,
-           begin operator [; operator] end,
-           if condition then operator,
-           while condition do operator,
-           name := expression,
-           EMPTY.
-
-condition = odd expression,
-            expression cond_oper expression.
-
-expression = plus_minus_empty term [plus_minus term].
-
-term = factor [mul_div factor].
-factor = name, number, ( expression ).
-
+exp1 = x,y,[z w] f.
+exp2 = a b c,z.
+exp2 = var,begin for.
+exp1 = u,v w.
 end_of_file
