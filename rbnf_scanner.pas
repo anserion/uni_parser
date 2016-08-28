@@ -60,28 +60,28 @@ end {factor};
 // term ::= <factor> {<factor>}
 function term(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
-   repeat
-     k:=factor(k,tokens_num,token_table);
-   until (token_table[k].s_name='.')or
-         (token_table[k].s_name=',')or
-         (token_table[k].s_name='|')or
-         (token_table[k].s_name='!]')or
-         (token_table[k].s_name=']')or
-         (k>=tokens_num);
-   term:=k;
+  repeat
+    k:=factor(k,tokens_num,token_table);
+  until (token_table[k].s_name='.')or
+        (token_table[k].s_name=',')or
+        (token_table[k].s_name='|')or
+        (token_table[k].s_name='!]')or
+        (token_table[k].s_name=']')or
+        (k>=tokens_num);
+  term:=k;
 end {term};
 
 // expression ::= <term> {,<term>} 
 function expression(k,tokens_num:integer;var token_table:t_token_table):integer;
 begin
-   k:=term(k,tokens_num,token_table);
-   while ((token_table[k].s_name=',')or
+  k:=term(k,tokens_num,token_table);
+  while ((token_table[k].s_name=',')or
          (token_table[k].s_name='|'))and(k<tokens_num) do
-   begin
-      token_table[k].kind_toc:=meta;
-      k:=term(skip_nul(k+1,tokens_num,token_table),tokens_num,token_table);
-   end;
-   expression:=k;
+  begin
+    token_table[k].kind_toc:=meta;
+    k:=term(skip_nul(k+1,tokens_num,token_table),tokens_num,token_table);
+  end;
+  expression:=k;
 end {expression};
 
 procedure mark_tokens(tokens_num:integer;var token_table:t_token_table);

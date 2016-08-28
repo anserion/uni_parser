@@ -1,8 +1,6 @@
-// PL0 syntax file
+//PL0 RBNF syntax example
 
-bbbb= xxxx [aaa bbb !] yyyyy.
-
-prog = block \. .
+prog = block.
 
 number= ANY.
 number1= [-] digit [digit].
@@ -22,17 +20,17 @@ mul_div = *, / .
 reserved_words= const,var,procedure,call,
                 begin,end,if,then,while,do.
 
-block = [const name=number [ , name=number] ; ]
-        [var name [ , name] ; ]
+block = [const name=number [ \, name=number] ; ]
+        [var name [ \, name] ; ]
         [procedure name ; block ; ]
         operator.
 
-operator = EMPTY,
-           call name;,
-           begin operator end;,
+operator = call name,
+           begin operator [; operator] end,
            if condition then operator,
            while condition do operator,
-           name := expression;.
+           name := expression,
+           EMPTY.
 
 condition = odd expression,
             expression cond_oper expression.
@@ -40,5 +38,6 @@ condition = odd expression,
 expression = plus_minus_empty term [plus_minus term].
 
 term = factor [mul_div factor].
-factor ::= name, number, ( expression ).
+factor = name, number, ( expression ).
+
 end_of_file
