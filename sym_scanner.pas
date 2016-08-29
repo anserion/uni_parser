@@ -49,7 +49,7 @@ begin {getsym}
 
   if (ch='#')and(ch2 in digits+['A','B','C','D','E','F']) then
   begin
-    writeln('16-special');
+    id.kind_sym:=oper;
     getch(f,ch,ch2);
     tmp:=ord(ch)-ord('0');
     if ch in ['A','B','C','D','E','F'] then tmp:=ord(ch)-ord('A')+10;
@@ -61,7 +61,6 @@ begin {getsym}
       if not(end_of_file) then getch(f,ch,ch2);
     end;
     if tmp2<0 then id.s_name:=chr(tmp) else id.s_name:=chr(tmp*16+tmp2);
-    writeln(tmp,' ',tmp2,' ',id.s_name);
     if not(end_of_file) then getch(f,ch,ch2);
   end
     else

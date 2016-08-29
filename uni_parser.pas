@@ -21,7 +21,7 @@ var
     prg_symbols_num,tokens_num:integer;
 
 //разбор соответствия входного потока символов правилам языка
-procedure parse(level,goal:integer; var cur_sym:integer; var match:boolean);
+procedure parse(level,goal:integer; var cur_sym:integer; var match:boolean; parent_exclude:boolean);
 var s:integer; exclude,alter_exit:boolean;
 begin
   exclude:=false;
@@ -33,14 +33,18 @@ begin
     begin
       writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,
               ' ',s,':EXCLUDE_ON:',token_table[s].suc,':',token_table[s].alt);
-      exclude:=true; s:=token_table[s].suc;
+      exclude:=true;
+      parent_exclude:=true;
+      s:=token_table[s].suc;
     end;
 
     if token_table[s].s_name='EXCLUDE_OFF' then
     begin
       writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,
               ' ',s,':EXCLUDE_OFF:',token_table[s].suc,':',token_table[s].alt);
-      exclude:=false; s:=token_table[s].suc;
+      exclude:=false;
+      parent_exclude:=false;
+      s:=token_table[s].suc;
       cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
     end;
 
@@ -65,7 +69,7 @@ begin
           begin
             match:=true;
             if token_table[s].s_name<>'EMPTY' then
-               cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
+               if not(parent_exclude) then cur_sym:=skip_nul(cur_sym+1,prg_symbols_num,prg_table);
           end else
           if token_table[s].alt=-1 then
           begin
@@ -77,7 +81,7 @@ begin
       begin
         writeln('LEVEL_',level,':',token_table[goal].s_name,':',goal,
                 ' ',s,':"',token_table[token_table[s].entry].s_name,'"-->',token_table[s].entry,' NON_TERMINAL');
-        parse(level+1,token_table[s].entry,cur_sym,match);
+        parse(level+1,token_table[s].entry,cur_sym,match,parent_exclude);
         if exclude then match:=not(match);
       end;
       if match then s:=token_table[s].suc else s:=token_table[s].alt;
@@ -153,6 +157,6 @@ begin {main}
   //проверка синтаксиса программы
   writeln('parse text by RBNF syntax tree');
   address:=1; match:=true;
-  parse(1,goal,address,match);
+  parse(1,goal,address,match,false);
   if match then writeln('CORRECT') else writeln('INCORRECT');
 end.
