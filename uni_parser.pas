@@ -55,6 +55,10 @@ begin
         else
         begin
           if (token_table[s].s_name='ANY')or
+             ((token_table[s].s_name='NUMBER')and(prg_table[cur_sym].kind_sym=num))or
+             ((token_table[s].s_name='IDENT')and(prg_table[cur_sym].kind_sym=ident))or
+             ((token_table[s].s_name='OPER')and(prg_table[cur_sym].kind_sym=oper))or
+             ((token_table[s].s_name='NULL')and(prg_table[cur_sym].kind_sym=nul))or
              ((token_table[s].s_name='ONE_ANY_CHAR')and(length(prg_table[cur_sym].s_name)=1))or
              (token_table[s].s_name='EMPTY')or
              (token_table[s].s_name=prg_table[cur_sym].s_name) then
@@ -77,6 +81,7 @@ begin
         if exclude then match:=not(match);
       end;
       if match then s:=token_table[s].suc else s:=token_table[s].alt;
+      if s<0 then match:=true;
       if alter_exit then s:=0;
 //      if s<0 then s:=0;
     end;

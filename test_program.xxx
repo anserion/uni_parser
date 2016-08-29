@@ -1,2 +1,23 @@
-(x+x)
+const a=15, b=10, c=22;
+var a,b,c,d;
+
+procedure xxx;
+const x=5,y=2,z=33;
+var s,t,x;
+begin
+  call yyy;
+  if a>2 then begin end;
+end;
+
+procedure yyy;
+begin
+end;
+
+begin
+  begin end;
+  call xxx;
+  begin 
+    begin end;
+  end;
+end.
 end_of_file

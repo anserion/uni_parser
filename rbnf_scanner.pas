@@ -95,8 +95,8 @@ begin
   k:=skip_nul(1,tokens_num,token_table);
   while k<tokens_num do
   begin
-    if (token_table[k].s_name='//')or
-       (token_table[k].s_name='#') then
+    while (token_table[k].s_name='//')or
+          (token_table[k].s_name='#') do
     begin
       repeat
         k:=k+1;
@@ -105,18 +105,20 @@ begin
     end;
     if k<tokens_num then
     begin
-      if token_table[k].kind_sym=ident then
-      begin
-        token_table[k].kind_toc:=head;
-        k:=skip_nul(k+1,tokens_num,token_table);
-      end else error(k,tokens_num,'can not find head ident',token_table);
-      if (token_table[k].s_name='=')or
-         (token_table[k].s_name='::=') then token_table[k].kind_toc:=meta
-                                       else error(k,tokens_num,'can not find "=" or "::="',token_table);
+      if token_table[k].kind_sym=ident then token_table[k].kind_toc:=head
+         else error(k,tokens_num,'can not find head ident',token_table);
+
+      k:=skip_nul(k+1,tokens_num,token_table);
+      if (token_table[k].s_name='=')or(token_table[k].s_name='::=')
+         then token_table[k].kind_toc:=meta
+         else error(k,tokens_num,'can not find "=" or "::="',token_table);
+
       if k<tokens_num then k:=expression(k+1,tokens_num,token_table)
                       else error(k,tokens_num,'can not find expression body',token_table);
+
       if token_table[k].s_name<>'.' then error(k,tokens_num,'can not find "."',token_table);
       token_table[k].kind_toc:=meta;
+
       k:=skip_nul(k+1,tokens_num,token_table);
     end;
   end;
