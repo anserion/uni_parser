@@ -1,4 +1,4 @@
-//rbnf rules for a pascal language
+//rbnf rules for a Niklaus Wirth pascal language
 
 pascal_program= program name ( name [ \, name ] ) ; block \. .
 
