@@ -1,3 +1,5 @@
+// rbnf rules for Nilkaus Wirth PL0 language
+
 prog = block \. .
 
 number= NUMBER.
@@ -22,7 +24,7 @@ operator_content=
   if condition then operator,
   while condition do operator.
 
-operator= [ operator_content !] EMPTY.
+operator= [ operator_content !].
 
 condition= unary_oper expression.
 condition= expression binary_oper expression.

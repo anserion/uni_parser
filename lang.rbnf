@@ -1,94 +1,36 @@
-//rbnf rules for a pascal language
+// rbnf rules for Nilkaus Wirth PL0 language
 
-pascal_program= program name ( name [ \, name ] ) ; block \. .
+prog = block \. .
 
-name= IDENT.
-symbol= IDENT.
+number= NUMBER.
+name= EXCLUDE_ON reserved_words EXCLUDE_OFF.
+reserved_words= const,var,procedure,call,begin,end,if,then,while,do.
 
-plus_minus= +,-.
-const_name= name.
-var_name= name.
-field_name= name.
-function_name= name.
-type_name= name.
-procedure_name= name.
+unary_oper= odd.
+binary_oper= =, <>, <, >, <=, >= .
+plus_minus= +, - .
+mul_div= *, / .
 
-int_wo_sign= NUMBER.
+const_sector= const name = number [ \, name=number] ;.
+var_sector= var name [ \, name] ;.
+proc_sector= procedure name ; block ;.
 
-num_wo_sign= int_wo_sign [ \. NUMBER !] [ E [plus_minus !] int_wo_sign!].
+block = [const_sector!] [var_sector!] [proc_sector] operator.
 
+operator_content= 
+  name := expression,
+  call name,
+  begin operator [; operator] end,
+  if condition then operator,
+  while condition do operator.
 
-const_wo_sign= const_name, num_wo_sign, nil, \' [symbol] \' .
+operator= [ operator_content !].
 
-const_name_or_num_name= const_name,int_wo_sign.
-constant= [plus_minus !] const_name_or_num_name, \' [symbol] \' .
+condition= unary_oper expression.
+condition= expression binary_oper expression.
 
-var_name_or_field_name= var_name, field_name.
-var_structure= \[ expression [ \, expression] \].
-var_structure= \. field_name.
-var_structure= \^ .
-variable= var_name_or_field_name [var_structure].
-
-factor= const_wo_sign, variable.
-factor= function_name [ ( expression [ \, expression] ) !].
-factor= ( expression ).
-factor= not factor.
-factor= \[ [ expression [ .. expression !] [\, expression [ .. expression !] ] !]  \].
-
-mul_div_mod_and= *, /, div, mod, and.
-term= factor [ mul_div_mod_and factor].
-
-plus_minus_or= +, -, or.
-expression_simple= [plus_minus !] term [plus_minus_or term].
-
-conditions= =, <, >, <>, <=, >=, in.
-expression= expression_simple [ conditions expression_simple!].
-
-function_or_var= function, var.
-par_list_struct= [ function_or_var !] name [ \, name] : type_name, procedure name [ \, name].
-params_list= [ ( par_list_struct [ ; par_list_struct !] ) !].
-
-type_simple= type_name, ( name [ \, name] ), constant .. constant .
-type_structure= array \[ type_simple [\, type_simple] \] of def_type.
-type_structure= file of def_type.
-type_structure= set of type_simple.
-type_structure= record fields_list end.
-def_type= type_simple, \^ type_name, [packed !] type_structure 
-
-fields_struct= [ name [\, name] : def_type !]
-fields_list= fields_struct [ ; fields_struct].
-comma_or_const= \, , constant.
-fields_list= case name : type_name of [ ; ] [ comma_or_const : ( fields_list ) [ ; ] ].
-
-operator= [int_wo_sign : !] [operator_struct !].
-
-var_or_func_name= variable, function_name
-operator_struct= var_or_func_name := expression.
-
-expression_or_proc_name= procedure_name, expression [ \, expression].
-operator_struct= procedure_name [ ( expression_or_proc_name ) !].
-
-operator_struct= begin operator [ ; operator ] end.
-operator_struct= if expression then operator [ else operator !].
-
-operator_struct_case= constant [ \, constant] : operator.
-operator_struct= case expression of [operator_struct_case [ ; operator_struct_case] ] end.
-
-operator_struct= while expression do operator.
-operator_struct= repeat operator [ ; operator] until expression.
-
-to_or_downto= to, downto.
-operator_struct= for var_name := operator to_or_downto expression do operator.
-
-operator_struct= with expression [ \, expression] do operator.
-operator_struct= goto int_wo_sign.
-
-block= [ label int_wo_sign [ \, int_wo_sign] ; !]
-       [ const name = constant ; [name = constant ; ] !]
-       [ type name = def_type name = def_type ; [name = def_type ; ] !]
-       [ var name [ \, name] : def_type ; [name [ \, name] : def_type ; ] !]
-       [ procedure name params_list ; block ; ]
-       [ function name params_list : type_name ; block ; ]
-       begin operator [ ; operator] end.
+expression= [plus_minus !] term [plus_minus term].
+term= factor [mul_div factor].
+factor= name, number, (expression).
 
 end_of_file
