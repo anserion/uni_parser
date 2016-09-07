@@ -1,6 +1,6 @@
 program test_pascal(input,output);
 label 10,20,30;
-const a=xxx; b=45; cc=1.3e-5.2;
+const a=xxx; b=45; cc=1.3e-5.2; ee="test 'inner msg' message";
 type t1=integer;
      t2=real;
      t2= 7..15;

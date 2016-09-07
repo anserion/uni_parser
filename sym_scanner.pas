@@ -64,6 +64,18 @@ begin {getsym}
     if not(end_of_file) then getch(f,ch,ch2);
   end
     else
+  if ch='''' then
+  begin
+    id.kind_sym:=ident;
+    id.s_name:='';
+    repeat
+      id.s_name:=id.s_name+ch;
+      getch(f,ch,ch2);
+    until (ch='''')or end_of_file;
+    id.s_name:=id.s_name+'''';
+    if not(end_of_file) then getch(f,ch,ch2);
+  end
+    else
   if ch='"' then
   begin
     id.kind_sym:=ident;
