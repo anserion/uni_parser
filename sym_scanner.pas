@@ -68,11 +68,12 @@ begin {getsym}
   begin
     id.kind_sym:=ident;
     id.s_name:='';
-    repeat
+    getch(f,ch,ch2);
+    while (ch<>'''')and not(end_of_file) do
+    begin
       id.s_name:=id.s_name+ch;
       getch(f,ch,ch2);
-    until (ch='''')or end_of_file;
-    id.s_name:=id.s_name+'''';
+    end;
     if not(end_of_file) then getch(f,ch,ch2);
   end
     else
@@ -80,11 +81,12 @@ begin {getsym}
   begin
     id.kind_sym:=ident;
     id.s_name:='';
-    repeat
+    getch(f,ch,ch2);
+    while (ch<>'"')and not(end_of_file) do
+    begin
       id.s_name:=id.s_name+ch;
       getch(f,ch,ch2);
-    until (ch='"')or end_of_file;
-    id.s_name:=id.s_name+'"';
+    end;
     if not(end_of_file) then getch(f,ch,ch2);
   end
     else
